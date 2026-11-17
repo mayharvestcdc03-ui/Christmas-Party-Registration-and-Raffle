@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Christmas Party Registration & Raffle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Young+Serif&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f1e7; --surface:#fffdf8; --ink:#1d2a22; --muted:#5f6b63; --line:#ddd3bf;
+  --pine:#1f4d3a; --pine-ink:#f6f1e7; --berry:#b3263e; --gold:#c9972b; --win:#fbefc9;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101a15; --surface:#18271f; --ink:#f1ebdc; --muted:#a2afa6; --line:#2c4034;
+    --pine:#3f8a68; --pine-ink:#0e1712; --berry:#e0566d; --gold:#e3b24a; --win:#3a3217;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101a15; --surface:#18271f; --ink:#f1ebdc; --muted:#a2afa6; --line:#2c4034;
+  --pine:#3f8a68; --pine-ink:#0e1712; --berry:#e0566d; --gold:#e3b24a; --win:#3a3217;
+  color-scheme:dark;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:28px 18px 56px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:22px;
+  border-bottom:3px double var(--line);padding-bottom:18px}
+h1{font:400 clamp(1.9rem,6vw,3rem)/1.05 "Young Serif",Georgia,serif;margin:0;color:var(--pine)}
+header p{margin:6px 0 0;color:var(--muted)}
+.count{text-align:right;flex-shrink:0}
+.count b{display:block;font:400 2.6rem/1 "Young Serif",Georgia,serif;color:var(--berry)}
+.count span{font-size:.85rem;color:var(--muted)}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+nav button{flex:1 1 auto;padding:12px 10px;border:2px solid var(--pine);background:transparent;color:var(--pine);
+  font:700 1rem "DM Sans",sans-serif;border-radius:10px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--pine);color:var(--pine-ink)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+section[hidden]{display:none}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+label{display:block;font-weight:700;margin-bottom:4px}
+input,select,textarea{width:100%;padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);
+  color:var(--ink);font:inherit;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.row{grid-template-columns:1fr}}
+.btn{padding:12px 20px;border:0;border-radius:10px;font:700 1rem "DM Sans",sans-serif;cursor:pointer;
+  background:var(--berry);color:#fff}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:.85rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{min-height:1.4em;margin:10px 0 0;font-weight:500}
+.msg.err{color:var(--berry)} .msg.ok{color:var(--pine)}
+.tools{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:26px 0 10px;flex-wrap:wrap}
+.tools h2{margin:0;font:400 1.4rem "Young Serif",Georgia,serif}
+.tools input{margin:0;max-width:240px}
+.table{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.85rem;color:var(--muted)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+.hint{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+textarea{resize:vertical}
+.prev{margin:0 0 14px;padding:12px 14px;border-left:5px solid var(--gold);background:var(--win);border-radius:6px;min-height:3.4em;color:var(--muted)}
+.prev b{color:var(--ink);font:400 1.3rem "Young Serif",Georgia,serif}
+.chk{display:inline-flex;gap:6px;align-items:center;font-weight:500;margin:0 16px 8px 0}
+.chk input{width:auto;margin:0}
+.wh{font:400 1.1rem "Young Serif",Georgia,serif;margin:18px 0 8px}
+.tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:var(--win);color:var(--ink)}
+.tag.on{background:var(--pine);color:var(--pine-ink)}
+.stage{text-align:center;padding:34px 16px}
+.stage .name{font:400 clamp(2rem,9vw,4rem)/1.1 "Young Serif",Georgia,serif;min-height:1.2em;color:var(--pine);word-break:break-word}
+.stage .meta{color:var(--muted);min-height:1.5em;margin:6px 0 22px}
+.stage.won .name{color:var(--berry)}
+.opts{display:flex;justify-content:center;gap:8px;align-items:center;margin-bottom:18px;color:var(--muted)}
+.opts input{width:auto;margin:0}
+.winners{list-style:none;padding:0;margin:0}
+.winners li{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:8px;
+  background:var(--win);border-left:5px solid var(--gold);border-radius:6px}
+@media (prefers-reduced-motion:no-preference){.stage.won .name{animation:pop .5s ease-out}}
+@keyframes pop{0%{transform:scale(.8);opacity:.3}100%{transform:scale(1);opacity:1}}
+
+  /* MHC Header & Sync Badges */
+  .mhc-brand-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .mhc-logo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    background: #fff;
+    padding: 3px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(31, 77, 58, 0.12);
+    color: var(--pine);
+    border: 1px solid var(--pine);
+  }
+  .sync-badge.online {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+  }
+  .sync-badge.offline {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+  }
+  .pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+  }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mhc-brand-bar">
+      <img src="assets/mhc-logo.png" alt="May Harvest Corporation" class="mhc-logo" onerror="this.style.display='none'">
+      <div>
+        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold);">May Harvest Corporation</div>
+        <h1>Christmas Party Raffle</h1>
+        <p>Register employee attendance, then draw the grand raffle winners.</p>
+      </div>
+    </div>
+    <div class="count">
+      <div style="margin-bottom: 6px;">
+        <span class="sync-badge online" id="syncBadge"><span class="pulse-dot"></span> <span id="syncText">Cloud Live</span></span>
+      </div>
+      <b id="total">0</b>
+      <span>confirmed registered</span>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+        <button class="btn alt small" id="btnSyncNow" title="Force sync with cloud database">Sync</button>
+        <button class="btn alt small" id="chgId">Change ID</button>
+        <button class="btn alt small" id="lockAll">Lock all</button>
+      </div>
+    </div>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" id="t-reg" aria-selected="true" aria-controls="reg">Register</button>
+    <button role="tab" id="t-list" aria-selected="false" aria-controls="allow">Allowed list</button>
+    <button role="tab" id="t-man" aria-selected="false" aria-controls="manual">Manual entry</button>
+    <button role="tab" id="t-draw" aria-selected="false" aria-controls="draw">Raffle draw</button>
+  </nav>
+
+  <section id="lock" hidden>
+    <div class="panel">
+      <h2 id="lockTitle" style="margin:0 0 6px;font:400 1.4rem 'Young Serif',Georgia,serif"></h2>
+      <p class="hint" id="lockHint"></p>
+      <label for="lid" id="l1">ID</label>
+      <input id="lid" type="password" autocomplete="off">
+      <div id="lid2wrap" hidden><label for="lid2" id="l2">Confirm ID</label><input id="lid2" type="password" autocomplete="off"></div>
+      <div id="lid3wrap" hidden><label for="lid3">Confirm new ID</label><input id="lid3" type="password" autocomplete="off"></div>
+      <button class="btn" id="unlock">Unlock</button>
+      <button class="btn alt" id="cancelChg" style="margin-left:8px" hidden>Cancel</button>
+      <p class="msg" id="lmsg" role="status"></p>
+    </div>
+  </section>
+
+  <section id="reg" hidden>
+    <div class="panel">
+      <p class="hint">Enter your employee number and agency. Your name and department will appear. Check them, then press Confirm attendance to qualify for the raffle draw.</p>
+      <p id="gate" class="msg err"></p>
+      <div class="row">
+        <div><label for="eid">Employee number</label><input id="eid" autocomplete="off" placeholder="e.g. 10234"></div>
+        <div><label for="dept">Agency</label><select id="dept"><option value="">Select agency</option><option>MHC</option><option>Workbridge</option><option>Multi</option><option>Top Jinzai</option><option>BLGM</option><option>Omnichron</option></select></div>
+      </div>
+      <div class="prev" id="prev" aria-live="polite"></div>
+      <button class="btn" id="add">Confirm attendance</button>
+      <p class="msg" id="msg" role="status"></p>
+    </div>
+
+    <div class="tools">
+      <h2>Registered employees</h2>
+      <input id="search" type="search" placeholder="Search name, ID or department" aria-label="Search employees">
+    </div>
+    <div class="panel table" id="list"></div>
+    <div class="tools"><button class="btn small" id="expEntries">Export confirmed entries (CSV)</button><button class="btn alt small" id="clearAll">Clear all registrations</button></div>
+    <p class="msg" id="xmsg1" role="status"></p>
+  </section>
+
+  <section id="allow" hidden>
+    <div class="tools" style="margin-top:0"><h2 id="ptitle">Manual entries to approve</h2><span></span></div>
+    <div class="panel table" id="plist"></div>
+    <div class="tools"><h2>Upload employee list</h2><span></span></div>
+    <div class="panel">
+      <label for="file">Upload employee list (CSV)</label>
+      <input id="file" type="file" accept=".csv,.txt,text/csv,text/plain">
+      <label for="paste">Or paste the list</label>
+      <textarea id="paste" rows="5" placeholder="Name, Employee number, Agency, Department&#10;Juan Dela Cruz, 10234, MHC, Finance"></textarea>
+      <p class="hint">One person per line: name, employee number, agency, department (department is optional). A header row is fine. Agency must be MHC, Workbridge, Multi, Top Jinzai, BLGM or Omnichron. From Excel, use Save As and choose CSV. Loading a list replaces the current one.</p>
+      <button class="btn" id="load">Load pasted list</button>
+      <p class="msg" id="amsg" role="status"></p>
+    </div>
+    <div class="tools"><h2 id="atitle">Allowed employees</h2><button class="btn alt small" id="clearAllowed">Remove list</button></div>
+    <div class="panel table" id="alist"></div>
+  </section>
+
+  <section id="manual" hidden>
+    <div class="panel">
+      <p class="hint">Use this only for employees who are not on the uploaded list. Accounting decides whether to approve the entry only, or also qualify the employee for the raffle draw. The employee then confirms with their employee number and agency.</p>
+      <label for="mname">Full name</label>
+      <input id="mname" autocomplete="off" placeholder="Juan Dela Cruz">
+      <div class="row">
+        <div><label for="mid">Employee number</label><input id="mid" autocomplete="off" placeholder="e.g. 10234"></div>
+        <div><label for="magency">Agency</label><select id="magency"><option value="">Select agency</option><option>MHC</option><option>Workbridge</option><option>Multi</option><option>Top Jinzai</option><option>BLGM</option><option>Omnichron</option></select></div>
+      </div>
+      <label for="mdept">Department</label>
+      <input id="mdept" autocomplete="off" placeholder="e.g. Accounting">
+      
+      <button class="btn" id="madd">Add employee</button>
+      <p class="msg" id="mmsg" role="status"></p>
+    </div>
+    <div class="tools"><h2>Waiting for approval</h2><span></span></div>
+    <div class="panel table" id="plistHR"></div>
+  </section>
+
+  <section id="draw" hidden>
+    <div class="panel">
+      <p class="hint">Add a round for one agency or a combination of agencies. You can keep adding rounds, so no total number of draws is needed upfront.</p>
+      <div class="row">
+        <div><label for="rset">Set</label><input id="rset" autocomplete="off" value="Set 1"></div>
+        <div><label for="rcount">Number of draws</label><input id="rcount" type="number" min="1" inputmode="numeric" placeholder="e.g. 10"></div>
+      </div>
+      <label>Agencies in this round</label>
+      <div id="agChecks"></div>
+      <label class="chk"><input type="checkbox" id="allAg"> All agencies</label>
+      <div><button class="btn" id="addRound">Add round</button></div>
+      <p class="msg" id="rmsg" role="status"></p>
+    </div>
+    <div class="tools"><h2>Rounds</h2><span></span></div>
+    <div class="panel table" id="rounds"></div>
+    <div class="panel stage" id="stage" style="margin-top:18px">
+      <p class="hint" id="rinfo"></p>
+      <div class="name" id="dname">Ready to draw</div>
+      <div class="meta" id="dmeta">Press the button to pick a winner.</div>
+      <label class="opts"><input type="checkbox" id="noRepeat" checked> Exclude people who already won</label>
+      <button class="btn" id="go">Draw a winner</button>
+    </div>
+    <div class="tools">
+      <h2>Winners</h2>
+      <span><button class="btn small" id="expWin">Export winners (CSV)</button> <button class="btn alt small" id="clearWin">Reset winners</button></span>
+    </div>
+    <div id="winners"></div>
+    <p class="msg" id="xmsg2" role="status"></p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var KEY_E='xmasRaffle.employees', KEY_W='xmasRaffle.winners', KEY_A='xmasRaffle.allowed', KEY_P='xmasRaffle.pending', KEY_I='xmasRaffle.ids', KEY_R='xmasRaffle.rounds';
+  var AGENCIES=['MHC','Workbridge','Multi','Top Jinzai','BLGM','Omnichron'];
+  function canon(s){var n=norm(s);return AGENCIES.filter(function(a){return norm(a)===n})[0]||null}
+  var ROLES={hr:'HR ID',acctg:'Accounting ID',admin:'Admin ID'};
+  var TABROLE={reg:'hr',list:'acctg',man:'hr',draw:'admin'};
+  var employees=load(KEY_E), winners=load(KEY_W), allowed=load(KEY_A), pending=load(KEY_P), ids=loadObj(KEY_I), rounds=load(KEY_R), activeId=null;
+  var spinning=false, unlocked={}, current='reg', last=Date.now(), changing=false;
+  function loadObj(k){try{var v=JSON.parse(localStorage.getItem(k));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return {}}}
+  function sha(s){
+    try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('xmas|'+s)).then(function(b){
+      return Array.prototype.map.call(new Uint8Array(b),function(x){return ('0'+x.toString(16)).slice(-2)}).join('')})}
+    catch(e){return Promise.resolve('p:'+s)}
+  }
+  var $=function(id){return document.getElementById(id)};
+
+  function load(k){try{var v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:[]}catch(e){return []}}
+  function setSyncStatus(online) {
+    var b = $('syncBadge'), t = $('syncText');
+    if (!b || !t) return;
+    if (online) {
+      b.className = 'sync-badge online';
+      t.textContent = 'Cloud Live';
+    } else {
+      b.className = 'sync-badge offline';
+      t.textContent = 'Local Mode';
+    }
+  }
+
+  function pushCloudData() {
+    try {
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employees: employees,
+          winners: winners,
+          allowed: allowed,
+          pending: pending,
+          ids: ids,
+          rounds: rounds
+        })
+      }).then(function(r){
+        if (r.ok) setSyncStatus(true);
+        else setSyncStatus(false);
+      }).catch(function(){
+        setSyncStatus(false);
+      });
+    } catch(e) {}
+  }
+
+  function pullCloudData() {
+    try {
+      fetch('/api/data', { cache: 'no-store' })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d && typeof d === 'object') {
+            setSyncStatus(true);
+            var updated = false;
+            // Merge employees
+            if (Array.isArray(d.employees) && d.employees.length > 0) {
+              var map = {};
+              employees.forEach(function(e){ map[norm(e.id)] = e; });
+              d.employees.forEach(function(e){
+                if (!map[norm(e.id)]) { map[norm(e.id)] = e; updated = true; }
+              });
+              employees = Object.values(map);
+            }
+            if (Array.isArray(d.allowed) && d.allowed.length > allowed.length) {
+              allowed = d.allowed;
+              updated = true;
+            }
+            if (Array.isArray(d.winners) && d.winners.length > winners.length) {
+              winners = d.winners;
+              updated = true;
+            }
+            if (Array.isArray(d.rounds) && d.rounds.length > rounds.length) {
+              rounds = d.rounds;
+              updated = true;
+            }
+            if (d.ids && typeof d.ids === 'object') {
+              ids = Object.assign({}, ids, d.ids);
+            }
+            if (updated) {
+              localStorage.setItem(KEY_E, JSON.stringify(employees));
+              localStorage.setItem(KEY_W, JSON.stringify(winners));
+              localStorage.setItem(KEY_A, JSON.stringify(allowed));
+              localStorage.setItem(KEY_P, JSON.stringify(pending));
+              localStorage.setItem(KEY_I, JSON.stringify(ids));
+              localStorage.setItem(KEY_R, JSON.stringify(rounds));
+              render();
+            }
+          }
+        }).catch(function(){
+          setSyncStatus(false);
+        });
+    } catch(e) {}
+  }
+
+  function save(){
+    try{
+      localStorage.setItem(KEY_E,JSON.stringify(employees));
+      localStorage.setItem(KEY_W,JSON.stringify(winners));
+      localStorage.setItem(KEY_A,JSON.stringify(allowed));
+      localStorage.setItem(KEY_P,JSON.stringify(pending));
+      localStorage.setItem(KEY_I,JSON.stringify(ids));
+      localStorage.setItem(KEY_R,JSON.stringify(rounds));
+    }catch(e){}
+    pushCloudData();
+  }
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function say(t,cls){var m=$('msg');m.textContent=t;m.className='msg '+(cls||'')}
+
+  var TABS={reg:'reg',list:'allow',man:'manual',draw:'draw'};
+  function tab(which,note,chg){
+    current=which;changing=!!chg&&!!ids[TABROLE[which]];
+    var role=TABROLE[which], open=!!unlocked[role]&&!changing;
+    Object.keys(TABS).forEach(function(k){
+      $(TABS[k]).hidden=!(open&&k===which);
+      $('t-'+k).setAttribute('aria-selected',k===which);
+    });
+    $('lock').hidden=open;
+    if(!open){
+      var setup=!ids[role], nm=ROLES[role];
+      $('lockTitle').textContent=changing?'Change '+nm:nm+(setup?' setup':' required');
+      $('lockHint').textContent=changing?'Enter the current '+nm+', then choose a new one.':setup?'No '+nm+' has been set yet. Choose one now and keep it private. It will be needed to open this tab.':'Enter the '+nm+' to open this tab.';
+      $('l1').textContent=changing?'Current ID':setup?'New ID':'ID';
+      $('l2').textContent=changing?'New ID':'Confirm ID';
+      $('lid2wrap').hidden=!(setup||changing);
+      $('lid3wrap').hidden=!changing;
+      $('cancelChg').hidden=!changing;
+      $('unlock').textContent=changing?'Save new ID':setup?'Save ID and unlock':'Unlock';
+      $('lid').value=$('lid2').value=$('lid3').value='';
+      $('lmsg').textContent=note||'';$('lmsg').className='msg ok';
+    }
+    if(open&&which==='draw')renderDrawInfo();
+  }
+  $('t-reg').onclick=function(){tab('reg')};
+  $('t-list').onclick=function(){tab('list')};
+  $('t-man').onclick=function(){tab('man')};
+  $('t-draw').onclick=function(){tab('draw')};
+
+  function render(){
+    $('total').textContent=employees.length;renderAllowed();renderPending();
+    var q=$('search').value.trim().toLowerCase();
+    var rows=employees.filter(function(e){return !q||(e.name+' '+e.id+' '+e.dept+' '+(e.unit||'')).toLowerCase().indexOf(q)>-1});
+    if(!rows.length){
+      $('list').innerHTML='<div class="empty">'+(employees.length?'No one matches your search.':'No one has registered yet. Add the first employee above.')+'</div>';
+    }else{
+      $('list').innerHTML='<table><thead><tr><th>Name</th><th>Employee number</th><th>Agency</th><th>Department</th><th></th></tr></thead><tbody>'+
+        rows.map(function(e){return '<tr><td>'+esc(e.name)+'</td><td>'+esc(e.id)+'</td><td>'+esc(e.dept||'–')+'</td><td>'+esc(e.unit||'–')+
+          '</td><td><button class="btn alt small" data-rm="'+esc(e.id)+'">Remove</button></td></tr>'}).join('')+'</tbody></table>';
+    }
+    renderWinners();renderRounds();
+    renderDrawInfo();
+  }
+
+  function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLowerCase()}
+  function amsg(t,c){var m=$('amsg');m.textContent=t;m.className='msg '+(c||'')}
+  function parseCSV(text){
+    var rows=[],row=[],cur='',q=false,i,c;
+    text=text.replace(/^\uFEFF/,'');
+    for(i=0;i<text.length;i++){
+      c=text[i];
+      if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+      else if(c==='"')q=true;
+      else if(c===','||c==='\t'||c===';'){row.push(cur);cur=''}
+      else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);rows.push(row);row=[];cur=''}
+      else cur+=c;
+    }
+    row.push(cur);rows.push(row);
+    return rows.map(function(r){return r.map(function(x){return x.trim()})}).filter(function(r){return r.some(Boolean)});
+  }
+  function importList(text){
+    var rows=parseCSV(text),list=[],seen={},skipped=0,unknown={};
+    if(rows.length&&/employee|number|agency|department|name/i.test(rows[0].join(' '))&&!/\d/.test(rows[0].join('')))rows.shift();
+    rows.forEach(function(r){
+      var k=norm(r[1]);
+      if(r.length<3||!r[0]||!r[1]||!r[2]||seen[k]){skipped++;return}
+      var cn=canon(r[2]);if(!cn){skipped++;unknown[r[2]]=1;return}
+      r[2]=cn;
+      seen[k]=1;list.push({name:r[0],id:r[1],dept:r[2],unit:r[3]||''});
+    });
+    if(!list.length){amsg('No valid rows found. Each line needs a name, employee number and a valid agency (MHC, Workbridge, Multi, Top Jinzai, BLGM or Omnichron).','err');return}
+    allowed=list;save();render();
+    amsg(list.length+' employees loaded'+(skipped?' ('+skipped+' rows skipped for missing details, repeated employee numbers or unknown agencies'+(Object.keys(unknown).length?': '+Object.keys(unknown).join(', '):'')+')':'')+'.','ok');
+  }
+  function renderAllowed(){
+    var regd={},ag={};
+    employees.forEach(function(e){regd[norm(e.id)]=1});
+    allowed.forEach(function(a){ag[a.dept]=1});
+    $('atitle').textContent='Allowed employees ('+allowed.length+')';
+    
+    $('gate').textContent=allowed.length?'':'Registration is closed. Ask the organizer to upload the employee list first.';
+    renderPrev();
+    $('alist').innerHTML=allowed.length?'<table><thead><tr><th>Name</th><th>Employee number</th><th>Agency</th><th>Department</th><th>Status</th></tr></thead><tbody>'+
+      allowed.map(function(a){var on=regd[norm(a.id)];return '<tr><td>'+esc(a.name)+'</td><td>'+esc(a.id)+'</td><td>'+esc(a.dept)+'</td><td>'+esc(a.unit||'–')+'</td><td><span class="tag'+(on?' on':'')+'">'+(on?'Registered':'Not yet')+'</span></td></tr>'}).join('')+'</tbody></table>'
+      :'<div class="empty">No list yet. Upload a CSV or paste your employees above.</div>';
+  }
+  $('file').onchange=function(){
+    var f=this.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){importList(String(r.result))};
+    r.onerror=function(){amsg('Could not read that file.','err')};
+    r.readAsText(f);this.value='';
+  };
+  $('load').onclick=function(){var t=$('paste').value;if(!t.trim()){amsg('Paste the list first.','err');return}importList(t);$('paste').value=''};
+  $('clearAllowed').onclick=function(){if(allowed.length&&confirm('Remove the allowed list? No one can register until a new list is loaded.')){allowed=[];save();render()}};
+
+  $('unlock').onclick=function(){
+    var role=TABROLE[current], v=$('lid').value.trim(), setup=!ids[role];
+    function lm(t){$('lmsg').textContent=t;$('lmsg').className='msg err'}
+    if(!v){lm('Enter the ID.');return}
+    if(setup){
+      if(v.length<4){lm('Use at least 4 characters.');return}
+      if(v!==$('lid2').value.trim()){lm('The two entries do not match.');return}
+      sha(role+v).then(function(h){ids[role]=h;unlocked[role]=true;last=Date.now();save();tab(current)});
+    }else if(changing){
+      var n=$('lid2').value.trim();
+      if(n.length<4){lm('Use at least 4 characters for the new ID.');return}
+      if(n!==$('lid3').value.trim()){lm('The new ID entries do not match.');return}
+      sha(role+v).then(function(h){
+        if(h!==ids[role]){lm('The current ID is not correct.');return}
+        sha(role+n).then(function(h2){ids[role]=h2;unlocked[role]=false;save();tab(current,ROLES[role]+' changed. Enter the new ID to continue.')});
+      });
+    }else{
+      sha(role+v).then(function(h){
+        if(h===ids[role]){unlocked[role]=true;last=Date.now();tab(current)}
+        else lm('That ID is not correct.');
+      });
+    }
+  };
+  ['lid','lid2','lid3'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('unlock').click()})});
+  $('lockAll').onclick=function(){unlocked={};tab(current)};
+  $('chgId').onclick=function(){tab(current,'',true)};
+  $('cancelChg').onclick=function(){tab(current)};
+  ['click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now()})});
+  setInterval(function(){if(Object.keys(unlocked).length&&Date.now()-last>600000){unlocked={};tab(current)}},30000);
+
+  function ptable(act){
+    if(!pending.length)return '<div class="empty">'+(act?'Nothing to approve.':'No entries waiting for approval.')+'</div>';
+    return '<table><thead><tr><th>Name</th><th>Employee number</th><th>Agency</th><th>Department</th>'+(act?'<th></th>':'<th>Status</th>')+'</tr></thead><tbody>'+
+      pending.map(function(p,i){return '<tr><td>'+esc(p.name)+'</td><td>'+esc(p.id)+'</td><td>'+esc(p.dept)+'</td><td>'+esc(p.unit||'–')+'</td><td>'+
+        (act?'<button class="btn small" data-aq="'+i+'">Approve and qualify</button> <button class="btn alt small" data-ap="'+i+'">Approve entry only</button> <button class="btn alt small" data-rj="'+i+'">Reject</button>':'<span class="tag">Pending</span>')+'</td></tr>'}).join('')+'</tbody></table>';
+  }
+  function renderPending(){
+    $('plist').innerHTML=ptable(true);$('plistHR').innerHTML=ptable(false);
+    $('ptitle').textContent='Manual entries to approve ('+pending.length+')';
+  }
+  $('plist').onclick=function(e){
+    var t=e.target, a=t.getAttribute('data-ap'), q=t.getAttribute('data-aq'), r=t.getAttribute('data-rj');
+    if(a==null&&q==null&&r==null)return;
+    var i=+(a!=null?a:q!=null?q:r), p=pending[i];
+    if(!p)return;
+    if(r==null){
+      var rec={name:p.name,id:p.id,dept:p.dept,unit:p.unit||''};
+      if(!allowed.some(function(x){return norm(x.id)===norm(p.id)}))allowed.push(rec);
+      if(q!=null&&!employees.some(function(x){return norm(x.id)===norm(p.id)}))employees.push(Object.assign({at:Date.now()},rec));
+    }
+    pending.splice(i,1);save();render();
+  };
+
+  function find(){
+    var id=$('eid').value.trim(), ag=$('dept').value.trim();
+    if(!id||!ag)return null;
+    return allowed.filter(function(a){return norm(a.id)===norm(id)&&norm(a.dept)===norm(ag)})[0]||null;
+  }
+  function renderPrev(){
+    var m=find(), el=$('prev');
+    if(m)el.innerHTML='<b>'+esc(m.name)+'</b><br>'+esc(m.unit||'No department listed');
+    else if($('eid').value.trim()&&$('dept').value.trim())el.textContent='No match found. Check the employee number and agency.';
+    else el.textContent='Your name and department will appear here.';
+    $('add').disabled=!m;
+  }
+  $('eid').addEventListener('input',renderPrev);
+  $('dept').addEventListener('input',renderPrev);
+
+  function csvCell(v){
+    var s=String(v==null?'':v);
+    if(/^[=+\-@\t\r]/.test(s))s="'"+s;
+    return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+  }
+  function toCSV(rows){return '\uFEFF'+rows.map(function(r){return r.map(csvCell).join(',')}).join('\r\n')}
+  function stamp(){var d=new Date();function p(n){return ('0'+n).slice(-2)}return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())}
+  function exportCSV(name,rows,el){
+    function note(t,c){el.textContent=t;el.className='msg '+(c||'')}
+    if(rows.length<2){note('Nothing to export yet.','err');return}
+    try {
+      var csvData = toCSV(rows);
+      var blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      var a = document.createElement('a');
+      var filename = name + '-' + stamp() + '.csv';
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      note('Export ready: ' + (rows.length - 1) + (rows.length === 2 ? ' row.' : ' rows.'), 'ok');
+    } catch(err) {
+      console.warn('Blob export failed, fallback:', err);
+      note('Export could not be saved: ' + err.message, 'err');
+    }
+  }
+  $('expEntries').onclick=function(){
+    var rows=[['No.','Full name','Employee number','Agency','Department','Confirmed at']];
+    employees.forEach(function(e,i){rows.push([i+1,e.name,e.id,e.dept,e.unit||'',e.at?new Date(e.at).toLocaleString():''])});
+    exportCSV('confirmed-entries',rows,$('xmsg1'));
+  };
+  $('expWin').onclick=function(){
+    var rows=[['Set','Round agencies','Draw no.','Full name','Employee number','Agency','Department']];
+    rounds.forEach(function(r){winners.filter(function(w){return w.rid===r.id}).forEach(function(w){rows.push([r.set,rlabel(r),w.n||'',w.name,w.id,w.dept,w.unit||''])})});
+    winners.filter(function(w){return !rounds.some(function(r){return r.id===w.rid})}).forEach(function(w){rows.push(['Other draws','',w.n||'',w.name,w.id,w.dept,w.unit||''])});
+    exportCSV('raffle-winners',rows,$('xmsg2'));
+  };
+
+  // Stored fields: dept = agency, unit = department
+  $('madd').onclick=function(){
+    var name=$('mname').value.trim().replace(/\s+/g,' '), id=$('mid').value.trim(), ag=$('magency').value.trim(), unit=$('mdept').value.trim();
+    function mm(t,c){var m=$('mmsg');m.textContent=t;m.className='msg '+(c||'')}
+    if(!name||!id||!ag){mm('Enter the name, employee number and agency.','err');return}
+    if(allowed.some(function(a){return norm(a.id)===norm(id)})){mm('Employee number '+id+' is already on the employee list. No manual entry is needed; the employee can confirm with their number and agency.','err');return}
+    if(pending.some(function(p){return norm(p.id)===norm(id)})){mm('Employee number '+id+' is already waiting for approval.','err');return}
+    pending.push({name:name,id:id,dept:ag,unit:unit});
+    save();render();
+    $('mname').value=$('mid').value=$('magency').value=$('mdept').value='';
+    mm(name+' was submitted. Accounting must approve it before the employee can register.','ok');$('mname').focus();
+  };
+
+  function rlabel(r){return r.all?'All agencies':r.ag.join(' + ')}
+  function drawnOf(r){return winners.filter(function(w){return w.rid===r.id}).length}
+  function activeRound(){return rounds.filter(function(r){return r.id===activeId})[0]||null}
+  function resetStage(){$('dname').textContent='Ready to draw';$('stage').className='panel stage'}
+  function poolFor(r){
+    var won={};
+    if($('noRepeat').checked)winners.forEach(function(w){won[norm(w.id)]=1});
+    return employees.filter(function(e){
+      return (r.all||r.ag.some(function(a){return norm(a)===norm(e.dept)}))&&!won[norm(e.id)];
+    });
+  }
+  function wli(w){return '<li><span>'+(w.n?'#'+w.n+' ':'')+'<b>'+esc(w.name)+'</b></span><span>'+esc(w.id)+(w.dept?' · '+esc(w.dept):'')+(w.unit?' · '+esc(w.unit):'')+'</span></li>'}
+  function renderWinners(){
+    if(!winners.length){$('winners').innerHTML='<div class="empty">No winners drawn yet.</div>';return}
+    var h='';
+    rounds.forEach(function(r){
+      var ws=winners.filter(function(w){return w.rid===r.id});
+      if(ws.length)h+='<h3 class="wh">'+esc(r.set)+' · '+esc(rlabel(r))+' ('+ws.length+' of '+r.total+')</h3><ul class="winners">'+ws.map(wli).join('')+'</ul>';
+    });
+    var other=winners.filter(function(w){return !rounds.some(function(r){return r.id===w.rid})});
+    if(other.length)h+='<h3 class="wh">Other draws</h3><ul class="winners">'+other.map(wli).join('')+'</ul>';
+    $('winners').innerHTML=h;
+  }
+  function renderAgChecks(){
+    var sel={},cnt={};
+    Array.prototype.forEach.call($('agChecks').querySelectorAll('input:checked'),function(i){sel[i.value]=1});
+    AGENCIES.forEach(function(a){cnt[a]=0});
+    employees.forEach(function(e){var c=canon(e.dept);if(c)cnt[c]++});
+    var names=AGENCIES;
+    $('agChecks').innerHTML=names.length?names.map(function(a){
+      return '<label class="chk"><input type="checkbox" value="'+esc(a)+'"'+(sel[a]?' checked':'')+($('allAg').checked?' disabled':'')+'> '+esc(a)+' ('+cnt[a]+')</label>'}).join(''):'<p class="hint">Agencies appear here once employees have confirmed attendance.</p>';
+  }
+  function renderRounds(){
+    renderAgChecks();
+    if(!activeRound()){var nx=rounds.filter(function(r){return drawnOf(r)<r.total})[0];activeId=nx?nx.id:null}
+    if(!rounds.length){$('rounds').innerHTML='<div class="empty">No rounds yet. Add the first one above.</div>';return}
+    $('rounds').innerHTML='<table><thead><tr><th>Set</th><th>Agencies</th><th>Draws</th><th></th></tr></thead><tbody>'+
+      rounds.map(function(r){var d=drawnOf(r);return '<tr><td>'+esc(r.set)+'</td><td style="white-space:normal;min-width:140px">'+esc(rlabel(r))+'</td><td>'+d+' of '+r.total+'</td><td>'+
+        (r.id===activeId?'<span class="tag on">Active</span>':'<button class="btn alt small" data-sel="'+r.id+'">Select</button>')+
+        (d===0?' <button class="btn alt small" data-del="'+r.id+'">Remove</button>':'')+'</td></tr>'}).join('')+'</tbody></table>';
+  }
+  $('allAg').onchange=renderAgChecks;
+  $('addRound').onclick=function(){
+    var n=parseInt($('rcount').value,10), all=$('allAg').checked, set=$('rset').value.trim()||'Set 1';
+    var ag=Array.prototype.map.call($('agChecks').querySelectorAll('input:checked'),function(i){return i.value});
+    function rm(t,c){var m=$('rmsg');m.textContent=t;m.className='msg '+(c||'')}
+    if(!(n>=1)){rm('Enter how many draws this round has.','err');return}
+    if(!all&&!ag.length){rm('Choose at least one agency, or tick All agencies.','err');return}
+    var r={id:'r'+Date.now(),set:set,ag:ag,all:all,total:n}, a=activeRound();
+    rounds.push(r);
+    if(!a||drawnOf(a)>=a.total){activeId=r.id;resetStage()}
+    Array.prototype.forEach.call($('agChecks').querySelectorAll('input'),function(i){i.checked=false});
+    $('allAg').checked=false;$('rcount').value='';
+    save();render();
+    rm('Round added: '+set+' · '+rlabel(r)+' · '+n+(n===1?' draw.':' draws.'),'ok');
+  };
+  $('rounds').onclick=function(e){
+    var s=e.target.getAttribute('data-sel'), d=e.target.getAttribute('data-del');
+    if(s){activeId=s;resetStage();render()}
+    else if(d){rounds=rounds.filter(function(r){return r.id!==d});if(activeId===d)activeId=null;save();resetStage();render()}
+  };
+  function renderDrawInfo(){
+    if(spinning)return;
+    var r=activeRound(), won=$('stage').className.indexOf('won')>=0;
+    if(!r){
+      $('rinfo').textContent='Add a round above to start drawing.';
+      $('go').disabled=true;$('go').textContent='Draw a winner';
+      if(!won)$('dmeta').textContent='No round selected.';
+      return;
+    }
+    var d=drawnOf(r), n=poolFor(r).length, done=d>=r.total;
+    $('rinfo').textContent=r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn';
+    $('go').disabled=done||n===0;
+    $('go').textContent=done?'Round complete':'Draw winner '+(d+1)+' of '+r.total;
+    if(!won)$('dmeta').textContent=done?'This round is complete. Select or add another round.':n===0?'No eligible employees left for these agencies.':n+' eligible '+(n===1?'entry':'entries')+' in this round.';
+  }
+
+  $('add').onclick=function(){
+    var id=$('eid').value.trim(), dept=$('dept').value.trim();
+    if(!allowed.length){say('Registration is closed until the employee list is uploaded.','err');return}
+    if(!id||!dept){say('Enter your employee number and agency.','err');return}
+    var m=allowed.filter(function(a){return norm(a.id)===norm(id)&&norm(a.dept)===norm(dept)})[0];
+    if(!m){say('We could not confirm that employee number and agency. Check both and try again.','err');return}
+    if(employees.some(function(e){return norm(e.id)===norm(m.id)})){say(m.name+' is already registered.','err');return}
+    employees.push({name:m.name,id:m.id,dept:m.dept,unit:m.unit||'',at:Date.now()});
+    save();render();
+    $('eid').value=$('dept').value='';renderPrev();
+    say('Confirmed. '+m.name+' is qualified for the raffle draw.','ok');$('eid').focus();
+  };
+  ['eid','dept'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('add').click()})});
+  $('search').oninput=render;
+  $('noRepeat').onchange=renderDrawInfo;
+
+  $('list').onclick=function(e){
+    var id=e.target.getAttribute&&e.target.getAttribute('data-rm');
+    if(!id)return;
+    var p=employees.filter(function(x){return x.id===id})[0];
+    if(p&&confirm('Remove '+p.name+' from the raffle?')){
+      employees=employees.filter(function(x){return x.id!==id});
+      winners=winners.filter(function(x){return x.id!==id});
+      save();render();
+    }
+  };
+  $('clearAll').onclick=function(){
+    if(employees.length&&confirm('Delete all registrations and winners? This cannot be undone.')){
+      employees=[];winners=[];save();render();
+      $('dname').textContent='Ready to draw';$('stage').className='panel stage';
+    }
+  };
+  $('clearWin').onclick=function(){
+    if(winners.length&&confirm('Reset the winners list?')){
+      winners=[];save();render();$('dname').textContent='Ready to draw';$('stage').className='panel stage';
+    }
+  };
+
+  $('go').onclick=function(){
+    var r=activeRound();if(!r||spinning||drawnOf(r)>=r.total)return;
+    var p=poolFor(r);if(!p.length)return;
+    var pick=p[Math.floor(Math.random()*p.length)];
+    spinning=true;$('go').disabled=true;$('stage').className='panel stage';
+    $('dmeta').textContent='Drawing…';
+    var ticks=0,total=28;
+    (function step(){
+      if(ticks<total){
+        $('dname').textContent=p[Math.floor(Math.random()*p.length)].name;
+        ticks++;setTimeout(step,40+ticks*ticks*0.35);
+      }else{
+        spinning=false;
+        $('dname').textContent=pick.name;
+        $('dmeta').textContent='Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
+        $('stage').className='panel stage won';
+        winners.push(Object.assign({},pick,{rid:r.id,n:drawnOf(r)+1}));save();render();
+      }
+    })();
+  };
+
+  if ($('btnSyncNow')) {
+    $('btnSyncNow').onclick = function() {
+      pullCloudData();
+      pushCloudData();
+    };
+  }
+
+  // Periodic pull from cloud every 10 seconds
+  setInterval(pullCloudData, 10000);
+  pullCloudData();
+
+  render();
+  tab('reg');
+})();
+</script>
+</body>
+</html>

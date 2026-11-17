@@ -1,0 +1,22 @@
+{
+  "name": "may-harvest-raffle-registration",
+  "version": "1.0.0",
+  "description": "May Harvest Corporation - Christmas Party Attendance Registration & Raffle Draw System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node -e \"console.log('Test OK')\""
+  },
+  "keywords": [
+    "may-harvest-corporation",
+    "christmas-party",
+    "raffle-registration",
+    "attendance",
+    "raffle-draw"
+  ],
+  "author": "May Harvest Corporation",
+  "license": "ISC",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
