@@ -151,10 +151,10 @@ textarea{resize:vertical}
       </div>
       <b id="total">0</b>
       <span>confirmed registered</span>
-      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;align-items:center;flex-wrap:wrap">
+        <span id="userBadge" style="display:none;font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;background:var(--pine);color:var(--pine-ink)"></span>
         <button class="btn alt small" id="btnSyncNow" title="Force sync with cloud database">Sync</button>
-        <button class="btn alt small" id="chgId">Change ID</button>
-        <button class="btn alt small" id="lockAll">Lock all</button>
+        <button class="btn alt small" id="lockAll" title="Logout or Lock session">Lock</button>
       </div>
     </div>
   </header>
@@ -168,14 +168,28 @@ textarea{resize:vertical}
 
   <section id="lock" hidden>
     <div class="panel">
-      <h2 id="lockTitle" style="margin:0 0 6px;font:400 1.4rem 'Young Serif',Georgia,serif"></h2>
-      <p class="hint" id="lockHint"></p>
-      <label for="lid" id="l1">ID</label>
-      <input id="lid" type="password" autocomplete="off">
-      <div id="lid2wrap" hidden><label for="lid2" id="l2">Confirm ID</label><input id="lid2" type="password" autocomplete="off"></div>
-      <div id="lid3wrap" hidden><label for="lid3">Confirm new ID</label><input id="lid3" type="password" autocomplete="off"></div>
-      <button class="btn" id="unlock">Unlock</button>
-      <button class="btn alt" id="cancelChg" style="margin-left:8px" hidden>Cancel</button>
+      <h2 id="lockTitle" style="margin:0 0 6px;font:400 1.4rem 'Young Serif',Georgia,serif">Security Login</h2>
+      <p class="hint" id="lockHint">Enter your assigned password to access this system.</p>
+      
+      <div style="margin-bottom:12px">
+        <label for="uRole">User Role (Optional)</label>
+        <select id="uRole">
+          <option value="auto">⚡ Auto-detect Role from Password</option>
+          <option value="president">👑 President</option>
+          <option value="admin">🛡️ Admin</option>
+          <option value="hr">👥 HR</option>
+          <option value="accounting">💼 Accounting</option>
+          <option value="wall">📺 Wall (Projector Display)</option>
+          <option value="picker">🎲 Picker (Raffle Draw)</option>
+        </select>
+      </div>
+
+      <label for="lid" id="l1">Password</label>
+      <input id="lid" type="password" autocomplete="current-password" placeholder="Enter password...">
+      
+      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+        <button class="btn" id="unlock">Login & Unlock</button>
+      </div>
       <p class="msg" id="lmsg" role="status"></p>
     </div>
   </section>
@@ -258,7 +272,10 @@ textarea{resize:vertical}
       <div class="name" id="dname">Ready to draw</div>
       <div class="meta" id="dmeta">Press the button to pick a winner.</div>
       <label class="opts"><input type="checkbox" id="noRepeat" checked> Exclude people who already won</label>
-      <button class="btn" id="go">Draw a winner</button>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <button class="btn" id="go">Draw a winner</button>
+        <button class="btn alt" id="btnWallFullscreen" type="button" title="Open Stage in Fullscreen for Wall / Projector">📺 Wall Projector Mode</button>
+      </div>
     </div>
     <div class="tools">
       <h2>Winners</h2>
@@ -274,10 +291,58 @@ textarea{resize:vertical}
   var KEY_E='xmasRaffle.employees', KEY_W='xmasRaffle.winners', KEY_A='xmasRaffle.allowed', KEY_P='xmasRaffle.pending', KEY_I='xmasRaffle.ids', KEY_R='xmasRaffle.rounds';
   var AGENCIES=['MHC','Workbridge','Multi','Top Jinzai','BLGM','Omnichron'];
   function canon(s){var n=norm(s);return AGENCIES.filter(function(a){return norm(a)===n})[0]||null}
-  var ROLES={hr:'HR ID',acctg:'Accounting ID',admin:'Admin ID'};
-  var TABROLE={reg:'hr',list:'acctg',man:'hr',draw:'admin'};
+  var CREDENTIALS = {
+    president: { name: 'President', pass: 'claire123', icon: '👑', tabs: ['reg', 'list', 'man', 'draw'], desc: 'Master Access' },
+    admin: { name: 'Admin', pass: '0000', icon: '🛡️', tabs: ['reg', 'list', 'man', 'draw'], desc: 'Full System Access' },
+    hr: { name: 'HR', pass: 'HR2026cHRISTMAS', icon: '👥', tabs: ['reg', 'man'], desc: 'Registration & Manual Submission' },
+    accounting: { name: 'Accounting', pass: 'Acctg2026IDChristmas', icon: '💼', tabs: ['list', 'man', 'reg'], desc: 'Allowed List & Approval Queue' },
+    wall: { name: 'Wall', pass: '5555', icon: '📺', tabs: ['draw'], desc: 'Wall / Projector Display' },
+    picker: { name: 'Picker', pass: '7777', icon: '🎲', tabs: ['draw'], desc: 'Raffle Draw & Spinner' }
+  };
+
+  var TAB_NAMES = {
+    reg: 'Attendee Registration',
+    list: 'Allowed Employees List',
+    man: 'Manual Entry & Approvals',
+    draw: 'Raffle Draw Stage'
+  };
+
+  var TAB_PERMS = {
+    reg: ['hr', 'accounting', 'admin', 'president'],
+    list: ['accounting', 'admin', 'president'],
+    man: ['hr', 'accounting', 'admin', 'president'],
+    draw: ['picker', 'wall', 'admin', 'president']
+  };
+
+  var currentUser = sessionStorage.getItem('mhc_raffle_user') || null;
   var employees=load(KEY_E), winners=load(KEY_W), allowed=load(KEY_A), pending=load(KEY_P), ids=loadObj(KEY_I), rounds=load(KEY_R), activeId=null;
-  var spinning=false, unlocked={}, current='reg', last=Date.now(), changing=false;
+  var spinning=false, current='reg', last=Date.now();
+
+  function isTabAccessible(role, tabKey) {
+    if (!role || !CREDENTIALS[role]) return false;
+    return CREDENTIALS[role].tabs.indexOf(tabKey) !== -1;
+  }
+
+  function getRequiredRolesText(tabKey) {
+    var allowedRoles = TAB_PERMS[tabKey] || [];
+    return allowedRoles.map(function(r){ return CREDENTIALS[r].icon + ' ' + CREDENTIALS[r].name; }).join(', ');
+  }
+
+  function updateUserBadge() {
+    var badge = $('userBadge'), lockBtn = $('lockAll');
+    if (currentUser && CREDENTIALS[currentUser]) {
+      var u = CREDENTIALS[currentUser];
+      if (badge) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = u.icon + ' ' + u.name;
+        badge.title = 'Logged in as ' + u.name + ' (' + u.desc + ')';
+      }
+      if (lockBtn) lockBtn.textContent = 'Logout';
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (lockBtn) lockBtn.textContent = 'Lock';
+    }
+  }
   function loadObj(k){try{var v=JSON.parse(localStorage.getItem(k));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return {}}}
   function sha(s){
     try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('xmas|'+s)).then(function(b){
@@ -384,28 +449,43 @@ textarea{resize:vertical}
   function say(t,cls){var m=$('msg');m.textContent=t;m.className='msg '+(cls||'')}
 
   var TABS={reg:'reg',list:'allow',man:'manual',draw:'draw'};
-  function tab(which,note,chg){
-    current=which;changing=!!chg&&!!ids[TABROLE[which]];
-    var role=TABROLE[which], open=!!unlocked[role]&&!changing;
+  function tab(which, note) {
+    current = which;
+    var open = isTabAccessible(currentUser, which);
     Object.keys(TABS).forEach(function(k){
-      $(TABS[k]).hidden=!(open&&k===which);
-      $('t-'+k).setAttribute('aria-selected',k===which);
+      $(TABS[k]).hidden = !(open && k === which);
+      $('t-' + k).setAttribute('aria-selected', k === which);
     });
-    $('lock').hidden=open;
-    if(!open){
-      var setup=!ids[role], nm=ROLES[role];
-      $('lockTitle').textContent=changing?'Change '+nm:nm+(setup?' setup':' required');
-      $('lockHint').textContent=changing?'Enter the current '+nm+', then choose a new one.':setup?'No '+nm+' has been set yet. Choose one now and keep it private. It will be needed to open this tab.':'Enter the '+nm+' to open this tab.';
-      $('l1').textContent=changing?'Current ID':setup?'New ID':'ID';
-      $('l2').textContent=changing?'New ID':'Confirm ID';
-      $('lid2wrap').hidden=!(setup||changing);
-      $('lid3wrap').hidden=!changing;
-      $('cancelChg').hidden=!changing;
-      $('unlock').textContent=changing?'Save new ID':setup?'Save ID and unlock':'Unlock';
-      $('lid').value=$('lid2').value=$('lid3').value='';
-      $('lmsg').textContent=note||'';$('lmsg').className='msg ok';
+    $('lock').hidden = open;
+    updateUserBadge();
+
+    if (!open) {
+      var reqText = getRequiredRolesText(which);
+      if (currentUser && CREDENTIALS[currentUser]) {
+        $('lockTitle').textContent = CREDENTIALS[currentUser].icon + ' ' + CREDENTIALS[currentUser].name + ' — Restricted';
+        $('lockHint').textContent = 'Your current role does not have access to ' + TAB_NAMES[which] + '. Enter a password for: ' + reqText + '.';
+      } else {
+        $('lockTitle').textContent = 'Security Login Required';
+        $('lockHint').textContent = 'Enter your password to open ' + TAB_NAMES[which] + '. Permitted: ' + reqText + '.';
+      }
+      $('lid').value = '';
+      if ($('uRole')) $('uRole').value = 'auto';
+      $('lmsg').textContent = note || '';
+      $('lmsg').className = 'msg ' + (note ? 'ok' : '');
+      setTimeout(function(){ $('lid').focus(); }, 120);
     }
-    if(open&&which==='draw')renderDrawInfo();
+
+    if (open && which === 'draw') {
+      renderDrawInfo();
+      if (currentUser === 'wall') {
+        $('go').style.display = 'none';
+        if ($('addRound')) $('addRound').parentElement.style.display = 'none';
+        $('stage').scrollIntoView({ behavior: 'smooth' });
+      } else {
+        $('go').style.display = '';
+        if ($('addRound')) $('addRound').parentElement.style.display = '';
+      }
+    }
   }
   $('t-reg').onclick=function(){tab('reg')};
   $('t-list').onclick=function(){tab('list')};
@@ -479,35 +559,87 @@ textarea{resize:vertical}
   $('load').onclick=function(){var t=$('paste').value;if(!t.trim()){amsg('Paste the list first.','err');return}importList(t);$('paste').value=''};
   $('clearAllowed').onclick=function(){if(allowed.length&&confirm('Remove the allowed list? No one can register until a new list is loaded.')){allowed=[];save();render()}};
 
-  $('unlock').onclick=function(){
-    var role=TABROLE[current], v=$('lid').value.trim(), setup=!ids[role];
-    function lm(t){$('lmsg').textContent=t;$('lmsg').className='msg err'}
-    if(!v){lm('Enter the ID.');return}
-    if(setup){
-      if(v.length<4){lm('Use at least 4 characters.');return}
-      if(v!==$('lid2').value.trim()){lm('The two entries do not match.');return}
-      sha(role+v).then(function(h){ids[role]=h;unlocked[role]=true;last=Date.now();save();tab(current)});
-    }else if(changing){
-      var n=$('lid2').value.trim();
-      if(n.length<4){lm('Use at least 4 characters for the new ID.');return}
-      if(n!==$('lid3').value.trim()){lm('The new ID entries do not match.');return}
-      sha(role+v).then(function(h){
-        if(h!==ids[role]){lm('The current ID is not correct.');return}
-        sha(role+n).then(function(h2){ids[role]=h2;unlocked[role]=false;save();tab(current,ROLES[role]+' changed. Enter the new ID to continue.')});
-      });
-    }else{
-      sha(role+v).then(function(h){
-        if(h===ids[role]){unlocked[role]=true;last=Date.now();tab(current)}
-        else lm('That ID is not correct.');
-      });
+  $('unlock').onclick = function() {
+    var v = $('lid').value.trim();
+    var selRole = $('uRole') ? $('uRole').value : 'auto';
+    function lm(t, c) { $('lmsg').textContent = t; $('lmsg').className = 'msg ' + (c || 'err'); }
+    if (!v) { lm('Please enter your password.'); return; }
+
+    var matchedRole = null;
+    if (selRole !== 'auto') {
+      if (CREDENTIALS[selRole] && CREDENTIALS[selRole].pass === v) {
+        matchedRole = selRole;
+      }
+    } else {
+      for (var r in CREDENTIALS) {
+        if (CREDENTIALS[r].pass === v) {
+          matchedRole = r;
+          break;
+        }
+      }
+    }
+
+    if (!matchedRole) {
+      lm('Incorrect password. Please verify and try again.');
+      return;
+    }
+
+    if (!isTabAccessible(matchedRole, current)) {
+      lm('Logged in as ' + CREDENTIALS[matchedRole].icon + ' ' + CREDENTIALS[matchedRole].name + ', but this tab is not accessible. Permitted: ' + getRequiredRolesText(current) + '.');
+      currentUser = matchedRole;
+      sessionStorage.setItem('mhc_raffle_user', currentUser);
+      updateUserBadge();
+      return;
+    }
+
+    currentUser = matchedRole;
+    sessionStorage.setItem('mhc_raffle_user', currentUser);
+    updateUserBadge();
+    $('lid').value = '';
+    lm('Welcome, ' + CREDENTIALS[currentUser].name + '!', 'ok');
+    tab(current);
+  };
+
+  $('lid').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') $('unlock').click();
+  });
+
+  $('lockAll').onclick = function() {
+    if (currentUser) {
+      var prev = CREDENTIALS[currentUser].name;
+      currentUser = null;
+      sessionStorage.removeItem('mhc_raffle_user');
+      updateUserBadge();
+      tab(current, prev + ' logged out successfully.');
+    } else {
+      tab(current);
     }
   };
-  ['lid','lid2','lid3'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('unlock').click()})});
-  $('lockAll').onclick=function(){unlocked={};tab(current)};
-  $('chgId').onclick=function(){tab(current,'',true)};
-  $('cancelChg').onclick=function(){tab(current)};
-  ['click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now()})});
-  setInterval(function(){if(Object.keys(unlocked).length&&Date.now()-last>600000){unlocked={};tab(current)}},30000);
+
+  if ($('btnWallFullscreen')) {
+    $('btnWallFullscreen').onclick = function() {
+      var el = $('stage');
+      if (!document.fullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    };
+  }
+
+  var lastActivity = Date.now();
+  ['click', 'keydown'].forEach(function(ev) {
+    document.addEventListener(ev, function() { lastActivity = Date.now(); });
+  });
+  setInterval(function() {
+    if (currentUser && Date.now() - lastActivity > 900000) {
+      currentUser = null;
+      sessionStorage.removeItem('mhc_raffle_user');
+      updateUserBadge();
+      tab(current, 'Session locked due to inactivity.');
+    }
+  }, 30000);
 
   function ptable(act){
     if(!pending.length)return '<div class="empty">'+(act?'Nothing to approve.':'No entries waiting for approval.')+'</div>';
