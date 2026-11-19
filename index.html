@@ -109,7 +109,7 @@ body.pres nav,body.pres .count>div{display:none}
       <h1 id="evName">Christmas Party Raffle</h1>
       <p id="evSub">Register employees, then draw the winners.</p>
     </div>
-    <div class="count"><b id="total">0</b><span>registered</span><span id="syncst" style="display:block;font-size:.75rem;color:var(--muted)">Syncing with Cloud</span><div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn alt small" id="chgId">Change ID</button><button class="btn alt small" id="lockAll">Lock all</button></div></div>
+    <div class="count"><b id="total">0</b><span>registered</span><span id="syncst" style="display:block;font-size:.75rem;color:var(--muted)">Syncing with Cloud</span><div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;align-items:center"><span id="userBadge" style="display:none;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--pine);color:var(--pine-ink)"></span><button class="btn alt small" id="chgId">Change Password</button><button class="btn alt small" id="lockAll">Lock</button></div></div>
   </header>
 
   <nav role="tablist">
@@ -303,10 +303,41 @@ body.pres nav,body.pres .count>div{display:none}
   var KEY_E='xmasRaffle.employees', KEY_W='xmasRaffle.winners', KEY_A='xmasRaffle.allowed', KEY_P='xmasRaffle.pending', KEY_I='xmasRaffle.ids2', KEY_R='xmasRaffle.rounds', KEY_L='xmasRaffle.log', KEY_V='xmasRaffle.event';
   var AGENCIES=['MHC','Workbridge','Multi','Top Jinzai','BLGM','Omnichron'];
   function canon(s){var n=norm(s);return AGENCIES.filter(function(a){return norm(a)===n})[0]||null}
-  var ROLES={hr:'HR ID',acctg:'Accounting ID',admin:'Admin ID',wall:'Video wall ID',picker:'Draw picker ID',president:'President ID'};
-  var TABROLE={reg:'hr',list:'acctg',man:'hr',draw:'admin',pick:'picker',wall:'wall',sum:null,event:'admin',setup:'admin'};
+  var CREDENTIALS = {
+    president: { name: 'President', pass: 'claire123', icon: '👑', tabs: ['reg', 'list', 'man', 'draw', 'pick', 'wall', 'sum', 'event', 'setup'] },
+    admin: { name: 'Admin', pass: '0000', icon: '🛡️', tabs: ['reg', 'list', 'man', 'draw', 'pick', 'wall', 'sum', 'event', 'setup'] },
+    hr: { name: 'HR', pass: 'HR2026cHRISTMAS', icon: '👥', tabs: ['reg', 'man', 'sum'] },
+    accounting: { name: 'Accounting', pass: 'Acctg2026IDChristmas', icon: '💼', tabs: ['list', 'man', 'reg', 'sum'] },
+    wall: { name: 'Wall', pass: '5555', icon: '📺', tabs: ['wall', 'draw', 'sum'] },
+    picker: { name: 'Picker', pass: '7777', icon: '🎲', tabs: ['pick', 'draw', 'sum'] }
+  };
+  var currentUser = sessionStorage.getItem('mhc_user') || null;
+
+  function isOpen(w){
+    if (w === 'sum') return true;
+    if (!currentUser) return false;
+    if (!CREDENTIALS[currentUser]) return false;
+    return CREDENTIALS[currentUser].tabs.indexOf(w) !== -1;
+  }
+
+  function updateUserBadge() {
+    var badge = $('userBadge'), lockBtn = $('lockAll');
+    if (currentUser && CREDENTIALS[currentUser]) {
+      var u = CREDENTIALS[currentUser];
+      if (badge) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = u.icon + ' ' + u.name;
+        badge.title = 'Logged in as ' + u.name;
+      }
+      if (lockBtn) lockBtn.textContent = 'Logout';
+    } else {
+      if (badge) badge.style.display = 'none';
+      if (lockBtn) lockBtn.textContent = 'Lock';
+    }
+  }
+
   var employees=load(KEY_E), winners=load(KEY_W), allowed=load(KEY_A), pending=load(KEY_P), ids=loadObj(KEY_I), rounds=load(KEY_R), log=load(KEY_L), evInfo=loadObj(KEY_V), live=null, drawBy=null, dbh=null, seen={}, synced={}, activeId=null;
-  var spinning=false, unlocked={}, current='reg', last=Date.now(), changing=false;
+  var spinning=false, current='reg', last=Date.now(), changing=false;
   function loadObj(k){try{var v=JSON.parse(localStorage.getItem(k));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return {}}}
   function sha(s){
     try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('xmas|'+s)).then(function(b){
@@ -326,25 +357,41 @@ body.pres nav,body.pres .count>div{display:none}
 
   var TABS={reg:'reg',list:'allow',man:'manual',draw:'draw',pick:'pick',wall:'wall',sum:'sum',event:'evsec',setup:'setup'};
   function tab(which,note,chg){
-    current=which;changing=!!chg&&!!ids[TABROLE[which]];
-    var role=TABROLE[which], open=isOpen(which)&&!changing;
+    current=which;changing=!!chg;
+    var open=isOpen(which)&&!changing;
     Object.keys(TABS).forEach(function(k){
       $(TABS[k]).hidden=!(open&&k===which);
       $('t-'+k).setAttribute('aria-selected',k===which);
     });
     $('lock').hidden=open;
+    updateUserBadge();
+
     if(!open){
-      var setup=!ids[role], nm=ROLES[role];
-      $('lockTitle').textContent=changing?'Change '+nm:nm+(setup?' setup':' required');
-      $('lockHint').textContent=changing?'Enter the current '+nm+', then choose a new one.':setup?'No '+nm+' has been set yet. Choose one now and keep it private. It will be needed to open this tab.':'Enter the '+nm+' to open this tab.';
-      $('l1').textContent=changing?'Current ID':setup?'New ID':'ID';
-      $('l2').textContent=changing?'New ID':'Confirm ID';
-      $('lid2wrap').hidden=!(setup||changing);
-      $('lid3wrap').hidden=!changing;
-      $('cancelChg').hidden=!changing;
-      $('unlock').textContent=changing?'Save new ID':setup?'Save ID and unlock':'Unlock';
+      if(changing){
+        $('lockTitle').textContent='Change Password';
+        $('lockHint').textContent='Enter the current password, then choose a new one.';
+        $('l1').textContent='Current Password';
+        $('l2').textContent='New Password';
+        $('lid2wrap').hidden=false;
+        $('lid3wrap').hidden=false;
+        $('cancelChg').hidden=false;
+        $('unlock').textContent='Save New Password';
+      } else {
+        $('lockTitle').textContent=currentUser 
+          ? CREDENTIALS[currentUser].icon + ' ' + CREDENTIALS[currentUser].name + ' — Restricted Section' 
+          : 'Security Access Required';
+        $('lockHint').textContent=currentUser
+          ? 'Your role does not have permission for this section. Enter an authorized password to switch.'
+          : 'Enter your assigned password (President, Admin, HR, Accounting, Wall, or Picker) to open.';
+        $('l1').textContent='Password';
+        $('lid2wrap').hidden=true;
+        $('lid3wrap').hidden=true;
+        $('cancelChg').hidden=true;
+        $('unlock').textContent='Login & Unlock';
+      }
       $('lid').value=$('lid2').value=$('lid3').value='';
-      $('lmsg').textContent=note||'';$('lmsg').className='msg ok';
+      $('lmsg').textContent=note||'';$('lmsg').className='msg '+(note?'ok':'');
+      setTimeout(function(){$('lid').focus()},100);
     }
     if(open&&which==='draw')renderDrawInfo();
     if(open&&which==='setup')renderSetup();
@@ -422,44 +469,67 @@ body.pres nav,body.pres .count>div{display:none}
   $('clearAllowed').onclick=function(){if(allowed.length&&confirm('Remove the allowed list? No one can register until a new list is loaded.')){allowed=[];save();render()}};
 
   $('unlock').onclick=function(){
-    var role=TABROLE[current], v=$('lid').value.trim(), setup=!ids[role];
-    function lm(t){$('lmsg').textContent=t;$('lmsg').className='msg err'}
-    if(!v){lm('Enter the ID.');return}
-    if(setup){
-      if(v.length<4){lm('Use at least 4 characters.');return}
-      if(v!==$('lid2').value.trim()){lm('The two entries do not match.');return}
-      sha(role+v).then(function(h){ids[role]=h;unlocked[role]=true;last=Date.now();save();tab(current)});
-    }else if(changing){
-      var n=$('lid2').value.trim();
-      if(n.length<4){lm('Use at least 4 characters for the new ID.');return}
-      if(n!==$('lid3').value.trim()){lm('The new ID entries do not match.');return}
-      sha(role+v).then(function(h){
-        if(h!==ids[role]){lm('The current ID is not correct.');return}
-        sha(role+n).then(function(h2){ids[role]=h2;unlocked[role]=false;save();tab(current,ROLES[role]+' changed. Enter the new ID to continue.')});
-      });
-    }else{
-      // Support built-in IDs directly
-      if (v === 'claire123') { unlocked.admin = true; unlocked[role] = true; last = Date.now(); tab(current); return; }
-      if (v === '0000') { unlocked.admin = true; unlocked[role] = true; last = Date.now(); tab(current); return; }
-      if (v === 'HR2026cHRISTMAS' && (role==='hr'||current==='reg'||current==='manual')) { unlocked.hr = true; last = Date.now(); tab(current); return; }
-      if (v === 'Acctg2026IDChristmas' && (role==='acctg'||current==='allow'||current==='manual')) { unlocked.acctg = true; last = Date.now(); tab(current); return; }
-      if (v === '5555' && (current==='wall'||current==='draw')) { unlocked.wall = true; last = Date.now(); tab(current); return; }
-      if (v === '7777' && (current==='pick'||current==='draw')) { unlocked.picker = true; last = Date.now(); tab(current); return; }
+    var v=$('lid').value.trim();
+    function lm(t,c){$('lmsg').textContent=t;$('lmsg').className='msg '+(c||'err')}
+    if(!v){lm('Please enter your password.');return}
 
-      Promise.all([sha(role+v),sha('admin'+v),sha('president'+v)]).then(function(hs){
-        if(hs[0]===ids[role]){unlocked[role]=true;last=Date.now();tab(current)}
-        else if(hs[1]===ids.admin||hs[2]===ids.president){unlocked.admin=true;unlocked[role]=true;last=Date.now();tab(current)}
-        else if((current==='wall'||current==='pick')&&hs[1]===ids.admin){unlocked.admin=true;last=Date.now();tab(current)}
-        else lm('That ID is not correct.');
-      });
+    if(changing){
+      var n=$('lid2').value.trim(), n2=$('lid3').value.trim();
+      if(n.length<4){lm('Use at least 4 characters for the new password.');return}
+      if(n!==n2){lm('The new passwords do not match.');return}
+      var matched=null;
+      for(var r in CREDENTIALS){
+        if(CREDENTIALS[r].pass===v){matched=r;break;}
+      }
+      if(!matched){lm('Current password is not correct.');return}
+      CREDENTIALS[matched].pass=n;
+      changing=false;
+      lm('Password updated for '+CREDENTIALS[matched].name+'.','ok');
+      tab(current);
+      return;
     }
+
+    var matchedRole=null;
+    for(var r in CREDENTIALS){
+      if(CREDENTIALS[r].pass===v){matchedRole=r;break;}
+    }
+
+    if(!matchedRole){
+      lm('Incorrect password. Please verify and try again.');
+      return;
+    }
+
+    if(CREDENTIALS[matchedRole].tabs.indexOf(current)===-1){
+      currentUser=matchedRole;
+      sessionStorage.setItem('mhc_user',currentUser);
+      updateUserBadge();
+      lm('Logged in as '+CREDENTIALS[matchedRole].icon+' '+CREDENTIALS[matchedRole].name+', but this role cannot access this section.');
+      return;
+    }
+
+    currentUser=matchedRole;
+    sessionStorage.setItem('mhc_user',currentUser);
+    updateUserBadge();
+    $('lid').value='';
+    lm('Welcome, '+CREDENTIALS[currentUser].name+'!','ok');
+    tab(current);
   };
   ['lid','lid2','lid3'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('unlock').click()})});
-  $('lockAll').onclick=function(){unlocked={};tab(current)};
+  $('lockAll').onclick=function(){
+    if(currentUser){
+      var prev=CREDENTIALS[currentUser].name;
+      currentUser=null;
+      sessionStorage.removeItem('mhc_user');
+      updateUserBadge();
+      tab(current,prev+' logged out.');
+    }else{
+      tab(current);
+    }
+  };
   $('chgId').onclick=function(){tab(current,'',true)};
   $('cancelChg').onclick=function(){tab(current)};
   ['click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now()})});
-  setInterval(function(){if(Object.keys(unlocked).length&&Date.now()-last>900000){unlocked={};tab(current)}},30000);
+  setInterval(function(){if(currentUser&&Date.now()-last>900000){currentUser=null;sessionStorage.removeItem('mhc_user');updateUserBadge();tab(current,'Session locked due to inactivity.')}},30000);
 
   function ptable(act){
     if(!pending.length)return '<div class="empty">'+(act?'Nothing to approve.':'No entries waiting for approval.')+'</div>';
@@ -574,10 +644,8 @@ body.pres nav,body.pres .count>div{display:none}
     }
   };
 
-  var DEF={hr:'HR2026cHRISTMAS',acctg:'Acctg2026IDChristmas',admin:'0000',wall:'5555',picker:'7777',president:'claire123'};
-  function isOpen(w){var r=TABROLE[w];return r===null||!!unlocked[r]||((w==='wall'||w==='pick'||w==='draw')&&!!unlocked.admin)}
   function seedIds(){
-    return Promise.all(Object.keys(DEF).filter(function(k){return !ids[k]}).map(function(k){return sha(k+DEF[k]).then(function(h){if(!ids[k])ids[k]=h})}));
+    return Promise.resolve();
   }
   var SK={employees:function(){return employees},winners:function(){return winners},rounds:function(){return rounds},allowed:function(){return allowed},pending:function(){return pending},ids:function(){return ids},evInfo:function(){return evInfo},log:function(){return log}};
   function apply(k,v){
@@ -712,13 +780,19 @@ body.pres nav,body.pres .count>div{display:none}
   }
   function renderExtra(){renderEvent();renderSummary();renderLog();renderLive()}
   function renderSetup(){
-    $('idRows').innerHTML=Object.keys(DEF).map(function(k){return '<div class="row" style="align-items:end"><div><label for="nid-'+k+'">'+ROLES[k]+'</label><input id="nid-'+k+'" type="password" autocomplete="new-password" placeholder="Enter a new '+ROLES[k]+'"></div><div><button class="btn small" style="margin-bottom:14px" data-setid="'+k+'">Save '+ROLES[k]+'</button></div></div>'}).join('');
+    $('idRows').innerHTML=Object.keys(CREDENTIALS).map(function(k){
+      var u=CREDENTIALS[k];
+      return '<div class="row" style="align-items:end"><div><label for="nid-'+k+'">'+u.icon+' '+u.name+' Password</label><input id="nid-'+k+'" type="password" autocomplete="new-password" placeholder="New password (current: '+u.pass+')"></div><div><button class="btn small" style="margin-bottom:14px" data-setid="'+k+'">Save '+u.name+'</button></div></div>';
+    }).join('');
   }
   $('idRows').onclick=function(e){
-    var k=e.target.getAttribute('data-setid');if(!k)return;
+    var k=e.target.getAttribute('data-setid');if(!k||!CREDENTIALS[k])return;
     var v=$('nid-'+k).value.trim(), m=$('smsg');
     if(v.length<4){m.textContent='Use at least 4 characters.';m.className='msg err';return}
-    sha(k+v).then(function(h){ids[k]=h;save();$('nid-'+k).value='';m.textContent=ROLES[k]+' updated.';m.className='msg ok'});
+    CREDENTIALS[k].pass=v;
+    $('nid-'+k).value='';
+    m.textContent=CREDENTIALS[k].name+' password updated.';
+    m.className='msg ok';
   };
   $('esave').onclick=function(){
     evInfo={name:$('ename').value.trim(),type:$('etype').value.trim(),date:$('edate').value};
