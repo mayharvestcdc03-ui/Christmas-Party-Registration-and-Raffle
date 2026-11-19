@@ -19,6 +19,9 @@ const freshState = () => ({
   pending: [],
   ids: {},
   rounds: [],
+  live: null,
+  log: [],
+  evInfo: {},
   lastUpdated: new Date().toISOString()
 });
 
@@ -34,6 +37,9 @@ function loadData() {
         pending: Array.isArray(parsed.pending) ? parsed.pending : [],
         ids: parsed.ids && typeof parsed.ids === 'object' ? parsed.ids : {},
         rounds: Array.isArray(parsed.rounds) ? parsed.rounds : [],
+        live: parsed.live || null,
+        log: Array.isArray(parsed.log) ? parsed.log : [],
+        evInfo: parsed.evInfo && typeof parsed.evInfo === 'object' ? parsed.evInfo : {},
         lastUpdated: parsed.lastUpdated || new Date().toISOString()
       };
     }
@@ -104,6 +110,21 @@ function mergeRaffleData(serverState, incoming) {
   // 6. Security IDs
   if (incoming.ids && typeof incoming.ids === 'object') {
     result.ids = { ...serverState.ids, ...incoming.ids };
+  }
+
+  // 7. Live Real-Time Draw Event
+  if (incoming.live !== undefined) {
+    result.live = incoming.live;
+  }
+
+  // 8. Draw Log
+  if (Array.isArray(incoming.log)) {
+    result.log = incoming.log;
+  }
+
+  // 9. Event Info
+  if (incoming.evInfo && typeof incoming.evInfo === 'object') {
+    result.evInfo = incoming.evInfo;
   }
 
   result.lastUpdated = new Date().toISOString();

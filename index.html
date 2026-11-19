@@ -72,8 +72,65 @@ textarea{resize:vertical}
 .wh{font:400 1.1rem "Young Serif",Georgia,serif;margin:18px 0 8px}
 .cl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;width:100%}
 .sig{height:34px;background:#fff;border:1px solid var(--line);border-radius:4px}
-.stage .wbig{font-size:clamp(3.2rem,11vw,8rem);font-weight:700}
-.stage .wbig+.meta{font-size:clamp(1.1rem,3vw,2.2rem)}
+.stage .wbig{
+  font: 800 clamp(4.2rem, 14vw, 9.8rem)/1.04 "Young Serif", Georgia, serif !important;
+  color: var(--pine);
+  min-height: 1.3em;
+  word-break: break-word;
+  margin: 16px 0;
+  text-shadow: 0 4px 30px rgba(31,77,58,0.18);
+  letter-spacing: -0.02em;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#wbox.won .wbig{
+  color: var(--berry) !important;
+  text-shadow: 0 6px 40px rgba(179,38,62,0.4) !important;
+  animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#wbox.drawing .wbig{
+  color: var(--gold) !important;
+  text-shadow: 0 4px 22px rgba(201,151,43,0.3) !important;
+}
+#wbox .meta{
+  font-size: clamp(1.4rem, 3.4vw, 2.8rem) !important;
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 8px;
+}
+#wbox.won .meta{
+  color: var(--ink) !important;
+}
+#wbox.won{
+  border: 3px solid var(--gold) !important;
+  box-shadow: 0 0 40px rgba(201,151,43,0.25) !important;
+}
+#wbox .hint{
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem) !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--gold) !important;
+}
+
+/* Fullscreen Video Wall */
+#wbox:fullscreen, #wbox:-webkit-full-screen{
+  width: 100vw !important;
+  height: 100vh !important;
+  padding: 50px 30px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: radial-gradient(circle at center, #fffdf8 0%, #ece4d2 100%) !important;
+}
+#wbox:fullscreen .wbig, #wbox:-webkit-full-screen .wbig{
+  font-size: clamp(5.8rem, 16vw, 11rem) !important;
+  margin: 24px 0 !important;
+}
+#wbox:fullscreen .meta, #wbox:-webkit-full-screen .meta{
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+}
 body.pres nav,body.pres .count>div{display:none}
 .tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:var(--win);color:var(--ink)}
 .tag.on{background:var(--pine);color:var(--pine-ink)}
@@ -138,10 +195,14 @@ body.pres nav,body.pres .count>div{display:none}
 
   <section id="wall" hidden>
     <div class="panel stage" id="wbox">
+      <div id="wstatus" style="display:inline-block;padding:4px 16px;border-radius:99px;background:var(--pine);color:var(--pine-ink);font-weight:700;font-size:0.95rem;margin-bottom:12px;letter-spacing:0.04em">✨ STAGE READY</div>
       <p class="hint" id="winfo"></p>
-      <div class="name wbig" id="wname">Ready</div>
-      <div class="meta" id="wmeta"></div>
-      <button class="btn alt small" id="wfs">Full screen</button>
+      <div class="name wbig" id="wname">Ready to Draw</div>
+      <div class="meta" id="wmeta">Winners will appear here live</div>
+      <div class="stage-controls">
+        <button class="btn" id="wgo">Draw next winner</button>
+        <button class="btn alt" id="wfs">Full screen</button>
+      </div>
     </div>
   </section>
 
@@ -675,7 +736,8 @@ body.pres nav,body.pres .count>div{display:none}
           ids: ids,
           rounds: rounds,
           log: log,
-          evInfo: evInfo
+          evInfo: evInfo,
+          live: live
         })
       }).then(function(res){
         if (res.ok) $('syncst').textContent = 'Cloud Live';
@@ -697,6 +759,12 @@ body.pres nav,body.pres .count>div{display:none}
           if (Array.isArray(d.rounds) && JSON.stringify(d.rounds) !== JSON.stringify(rounds)) { rounds = d.rounds; updated = true; }
           if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
           if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
+          if (d.live && typeof d.live === 'object') {
+            if (!live || d.live.ts !== live.ts) {
+              live = d.live;
+              renderLive();
+            }
+          }
           if (updated) {
             save();
             render();
@@ -708,7 +776,12 @@ body.pres nav,body.pres .count>div{display:none}
     } catch(e){}
   }
 
-  setInterval(pullServerData, 8000);
+  setInterval(pullServerData, 6000);
+  setInterval(function() {
+    if (current === 'wall' || current === 'pick') {
+      pullServerData();
+    }
+  }, 1000);
   pullServerData();
 
   function connect(){
@@ -731,27 +804,77 @@ body.pres nav,body.pres .count>div{display:none}
     }).catch(function(){});
   }
   function liveSet(o){
-    o.ts=Date.now();live=o;renderLive();
+    o.ts=Date.now();
+    live=o;
+    renderLive();
+    pushServerData();
     if(dbh){var j=JSON.stringify(o);seen.live=j;dbh.doc('sync/live').set({v:j,t:o.ts}).catch(function(){})}
   }
-  var shuf=null;
+  var shuf=null, lastWonCelebrated=null;
   function renderLive(){
-    $('pinfo').textContent=$('rinfo').textContent;
+    if ($('pinfo')) $('pinfo').textContent=$('rinfo').textContent;
     var d=live||{}, on=d.phase==='drawing'&&Date.now()-d.ts<20000;
-    $('winfo').textContent=d.info||$('rinfo').textContent;
-    $('pgo').disabled=$('go').disabled||on;
+    if ($('winfo')) $('winfo').textContent=d.info||$('rinfo').textContent;
+    if ($('pgo')) $('pgo').disabled=$('go').disabled||on;
+    if ($('wgo')) $('wgo').disabled=$('go').disabled||on;
+
+    var wbox = $('wbox');
+    var wstatus = $('wstatus');
+
     if(on){
-      if(!shuf)shuf=setInterval(function(){
-        if(!live||Date.now()-live.ts>20000){renderLive();return}
-        var e=employees[Math.floor(Math.random()*employees.length)];
-        if(e)$('wname').textContent=$('pname').textContent=e.name;
-      },70);
-      $('wmeta').textContent=$('pmeta').textContent='Drawing…';
+      if (wbox) wbox.className = 'panel stage drawing';
+      if (wstatus) {
+        wstatus.textContent = '🔴 LIVE DRAW IN PROGRESS';
+        wstatus.style.background = 'var(--berry)';
+      }
+      if(!shuf) {
+        startRoll(20000);
+        shuf=setInterval(function(){
+          if(!live||Date.now()-live.ts>20000){renderLive();return}
+          var e=employees[Math.floor(Math.random()*employees.length)];
+          if(e) {
+            if ($('wname')) $('wname').textContent=e.name;
+            if ($('pname')) $('pname').textContent=e.name;
+          }
+        },65);
+      }
+      if ($('wmeta')) $('wmeta').textContent='Randomizing all qualified entries across agencies...';
+      if ($('pmeta')) $('pmeta').textContent='Drawing…';
     }else{
-      if(shuf){clearInterval(shuf);shuf=null}
+      if(shuf){
+        clearInterval(shuf);
+        shuf=null;
+        stopRoll();
+      }
       var won=d.phase==='won';
-      $('wname').textContent=$('pname').textContent=won?d.name:'Ready';
-      $('wmeta').textContent=$('pmeta').textContent=won?d.meta:'';
+      if (won) {
+        if (wbox) wbox.className = 'panel stage won';
+        if (wstatus) {
+          wstatus.textContent = '🏆 WINNER DRAWN!';
+          wstatus.style.background = 'var(--gold)';
+        }
+        if ($('wname')) $('wname').textContent=d.name;
+        if ($('pname')) $('pname').textContent=d.name;
+        if ($('wmeta')) $('wmeta').textContent=d.meta;
+        if ($('pmeta')) $('pmeta').textContent=d.meta;
+
+        // Trigger celebratory sound & confetti on newly drawn winner
+        if (d.name && d.name !== lastWonCelebrated) {
+          lastWonCelebrated = d.name;
+          playCelebration();
+          launchConfetti();
+        }
+      } else {
+        if (wbox) wbox.className = 'panel stage';
+        if (wstatus) {
+          wstatus.textContent = '✨ STAGE READY';
+          wstatus.style.background = 'var(--pine)';
+        }
+        if ($('wname')) $('wname').textContent='Ready to Draw';
+        if ($('pname')) $('pname').textContent='Ready';
+        if ($('wmeta')) $('wmeta').textContent='Winners will appear here live on screen';
+        if ($('pmeta')) $('pmeta').textContent='';
+      }
     }
   }
   function renderEvent(){
@@ -804,6 +927,12 @@ body.pres nav,body.pres .count>div{display:none}
     m.textContent='';drawBy='Picker: '+n;$('go').click();
   };
   $('wfs').onclick=function(){var el=$('wbox');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
+  if ($('wgo')) {
+    $('wgo').onclick = function() {
+      drawBy = 'Video Wall Host';
+      $('go').click();
+    };
+  }
   if ($('wfsStage')) {
     $('wfsStage').onclick=function(){var el=$('stage');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
   }
