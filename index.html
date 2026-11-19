@@ -274,6 +274,7 @@ textarea{resize:vertical}
       <label class="opts"><input type="checkbox" id="noRepeat" checked> Exclude people who already won</label>
       <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
         <button class="btn" id="go">Draw a winner</button>
+        <button class="btn alt" id="btnSoundToggle" type="button" title="Toggle drum roll & celebration sound">🔊 Sound ON</button>
         <button class="btn alt" id="btnWallFullscreen" type="button" title="Open Stage in Fullscreen for Wall / Projector">📺 Wall Projector Mode</button>
       </div>
     </div>
@@ -846,23 +847,268 @@ textarea{resize:vertical}
     }
   };
 
+  // --- Web Audio Drum Roll & Celebration Sound Synthesizer ---
+  var audioCtx = null;
+  var isSoundMuted = false;
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) audioCtx = new AudioContextClass();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  var noiseBuffer = null;
+  function getNoiseBuffer(ctx) {
+    if (noiseBuffer) return noiseBuffer;
+    var bufferSize = ctx.sampleRate * 2;
+    noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    var output = noiseBuffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    return noiseBuffer;
+  }
+
+  function playDrumHit(volume, pitch) {
+    if (isSoundMuted) return;
+    var ctx = getAudioContext();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var v = volume || 0.4;
+    var p = pitch || 180;
+
+    // Drum body tone
+    var osc = ctx.createOscillator();
+    var oscGain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(p, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+
+    oscGain.gain.setValueAtTime(v * 0.7, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+
+    // Snare rattle (filtered noise burst)
+    var noise = ctx.createBufferSource();
+    noise.buffer = getNoiseBuffer(ctx);
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1900;
+    filter.Q.value = 1.3;
+
+    var noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(v, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.08);
+  }
+
+  var drumRollTimer = null;
+  function startDrumRoll(durationMs) {
+    if (isSoundMuted) return;
+    var ctx = getAudioContext();
+    if (!ctx) return;
+
+    var startTime = Date.now();
+    var baseInterval = 55;
+    
+    function rollStep() {
+      var elapsed = Date.now() - startTime;
+      var progress = Math.min(elapsed / durationMs, 1);
+      var vol = 0.2 + (progress * 0.55);
+      var pitch = 175 + (Math.random() * 22);
+      playDrumHit(vol, pitch);
+
+      if (elapsed < durationMs - 100) {
+        var nextInterval = Math.max(32, baseInterval - (progress * 22));
+        drumRollTimer = setTimeout(rollStep, nextInterval);
+      }
+    }
+    rollStep();
+  }
+
+  function stopDrumRoll() {
+    if (drumRollTimer) {
+      clearTimeout(drumRollTimer);
+      drumRollTimer = null;
+    }
+  }
+
+  function playFanfareAndCymbal() {
+    if (isSoundMuted) return;
+    var ctx = getAudioContext();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+
+    // 1. Shimmering Cymbal Crash
+    var noise = ctx.createBufferSource();
+    noise.buffer = getNoiseBuffer(ctx);
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(5000, now);
+
+    var cymGain = ctx.createGain();
+    cymGain.gain.setValueAtTime(0.7, now);
+    cymGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+
+    noise.connect(filter);
+    filter.connect(cymGain);
+    cymGain.connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 2.3);
+
+    // 2. Punch Bass Kick
+    var kick = ctx.createOscillator();
+    var kickGain = ctx.createGain();
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(140, now);
+    kick.frequency.exponentialRampToValueAtTime(45, now + 0.35);
+
+    kickGain.gain.setValueAtTime(0.85, now);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    kick.connect(kickGain);
+    kickGain.connect(ctx.destination);
+    kick.start(now);
+    kick.stop(now + 0.36);
+
+    // 3. Grand Celebration Fanfare Chords (C5 - E5 - G5 - C6)
+    var notes = [
+      { f: 523.25, delay: 0.05, dur: 0.5 },  // C5
+      { f: 659.25, delay: 0.18, dur: 0.5 },  // E5
+      { f: 783.99, delay: 0.32, dur: 0.6 },  // G5
+      { f: 1046.50, delay: 0.48, dur: 1.5 } // High C6 climax
+    ];
+
+    notes.forEach(function(n) {
+      var osc = ctx.createOscillator();
+      var g = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.f, now + n.delay);
+
+      g.gain.setValueAtTime(0.001, now + n.delay);
+      g.gain.linearRampToValueAtTime(0.45, now + n.delay + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + n.delay + n.dur);
+
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(now + n.delay);
+      osc.stop(now + n.delay + n.dur + 0.1);
+    });
+  }
+
+  // --- Festive Confetti Burst ---
+  function launchConfetti() {
+    var canvas = $('confettiCanvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'confettiCanvas';
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100vw';
+      canvas.style.height = '100vh';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '9999';
+      document.body.appendChild(canvas);
+    }
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var ctx = canvas.getContext('2d');
+    var pieces = [];
+    var colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#fbbf24', '#ffffff'];
+    for (var i = 0; i < 90; i++) {
+      pieces.push({
+        x: canvas.width / 2 + (Math.random() * 260 - 130),
+        y: canvas.height * 0.42,
+        vx: (Math.random() - 0.5) * 16,
+        vy: -Math.random() * 15 - 5,
+        size: Math.random() * 9 + 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        rSpeed: (Math.random() - 0.5) * 12,
+        alpha: 1
+      });
+    }
+
+    var startTime = Date.now();
+    function animate() {
+      var elapsed = Date.now() - startTime;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(function(p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.38; // gravity
+        p.rotation += p.rSpeed;
+        p.alpha = Math.max(0, 1 - (elapsed / 3200));
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      });
+
+      if (elapsed < 3200) {
+        requestAnimationFrame(animate);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+
+  if ($('btnSoundToggle')) {
+    $('btnSoundToggle').onclick = function() {
+      isSoundMuted = !isSoundMuted;
+      $('btnSoundToggle').textContent = isSoundMuted ? '🔇 Sound MUTED' : '🔊 Sound ON';
+      $('btnSoundToggle').style.opacity = isSoundMuted ? '0.6' : '1';
+    };
+  }
+
   $('go').onclick=function(){
     var r=activeRound();if(!r||spinning||drawnOf(r)>=r.total)return;
     var p=poolFor(r);if(!p.length)return;
     var pick=p[Math.floor(Math.random()*p.length)];
     spinning=true;$('go').disabled=true;$('stage').className='panel stage';
     $('dmeta').textContent='Drawing…';
+
+    // Start authentic drum roll buildup! 🥁
+    startDrumRoll(3200);
+
     var ticks=0,total=28;
     (function step(){
       if(ticks<total){
         $('dname').textContent=p[Math.floor(Math.random()*p.length)].name;
         ticks++;setTimeout(step,40+ticks*ticks*0.35);
       }else{
+        stopDrumRoll();
         spinning=false;
         $('dname').textContent=pick.name;
         $('dmeta').textContent='Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
         $('stage').className='panel stage won';
-        winners.push(Object.assign({},pick,{rid:r.id,n:drawnOf(r)+1}));save();render();
+        winners.push(Object.assign({},pick,{rid:r.id,n:drawnOf(r)+1}));
+        save();
+        render();
+
+        // Celebratory fanfare & confetti burst! 🎉🎊
+        playFanfareAndCymbal();
+        launchConfetti();
       }
     })();
   };
