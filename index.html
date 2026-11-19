@@ -70,190 +70,46 @@ textarea{resize:vertical}
 .chk{display:inline-flex;gap:6px;align-items:center;font-weight:500;margin:0 16px 8px 0}
 .chk input{width:auto;margin:0}
 .wh{font:400 1.1rem "Young Serif",Georgia,serif;margin:18px 0 8px}
+.cl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;width:100%}
+.sig{height:34px;background:#fff;border:1px solid var(--line);border-radius:4px}
+.stage .wbig{font-size:clamp(3.2rem,11vw,8rem);font-weight:700}
+.stage .wbig+.meta{font-size:clamp(1.1rem,3vw,2.2rem)}
+body.pres nav,body.pres .count>div{display:none}
 .tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:var(--win);color:var(--ink)}
 .tag.on{background:var(--pine);color:var(--pine-ink)}
-.stage{
-  text-align:center;
-  padding:44px 20px 28px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-height:420px;
-  position:relative;
-  background:radial-gradient(circle at center, var(--surface) 25%, var(--bg) 100%);
-  border-radius:18px;
-  box-shadow:0 6px 24px rgba(0,0,0,0.06);
-}
-.stage .hint{
-  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 700;
-  margin: 0 0 10px;
-}
-.stage .name{
-  font: 700 clamp(2.8rem, 9.5vw, 5.8rem)/1.08 "Young Serif",Georgia,serif;
-  min-height: 1.25em;
-  color: var(--pine);
-  word-break: break-word;
-  margin: 12px 0;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: -0.01em;
-}
-.stage.won .name{
-  color: var(--berry);
-  text-shadow: 0 4px 24px rgba(179,38,62,0.25);
-}
-.stage .meta{
-  color: var(--muted);
-  min-height: 1.5em;
-  margin: 2px 0 18px;
-  font-size: clamp(1rem, 2.2vw, 1.45rem);
-  font-weight: 600;
-}
-.stage.won .meta{
-  color: var(--ink);
-}
-.opts{
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  align-items:center;
-  margin:0 0 20px;
-  color:var(--muted);
-  font-size:0.85rem;
-}
+.stage{text-align:center;padding:44px 20px 32px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:420px;position:relative;background:radial-gradient(circle at center, var(--surface) 25%, var(--bg) 100%);border-radius:18px}
+.stage .name{font:700 clamp(2.8rem,9.5vw,5.8rem)/1.08 "Young Serif",Georgia,serif;min-height:1.25em;color:var(--pine);word-break:break-word;margin:12px 0}
+.stage .meta{color:var(--muted);min-height:1.5em;margin:2px 0 18px;font-size:clamp(1rem,2.2vw,1.45rem);font-weight:600}
+.stage.won .name{color:var(--berry);text-shadow:0 4px 24px rgba(179,38,62,0.25)}
+.stage.won .meta{color:var(--ink)}
+.opts{display:flex;justify-content:center;gap:8px;align-items:center;margin-bottom:18px;color:var(--muted)}
 .opts input{width:auto;margin:0}
-
-.stage-controls{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin-top:auto;
-  padding-top:16px;
-  border-top:1px dashed var(--line);
-  width:100%;
-  max-width:480px;
-}
-.stage-controls .btn{
-  font-size:0.88rem;
-  padding:7px 16px;
-  border-radius:8px;
-}
-.stage-controls .btn.alt{
-  font-size:0.82rem;
-  padding:6px 12px;
-}
-
-/* Fullscreen Stage / Wall Projector Mode */
-.stage:fullscreen, .stage:-webkit-full-screen{
-  width:100vw;
-  height:100vh;
-  padding:40px;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background:radial-gradient(circle at center, var(--surface) 20%, var(--bg) 100%);
-}
-.stage:fullscreen .name, .stage:-webkit-full-screen .name{
-  font-size:clamp(4.5rem, 13vw, 8rem);
-  margin:20px 0;
-}
-.stage:fullscreen .meta, .stage:-webkit-full-screen .meta{
-  font-size:1.8rem;
-}
-.stage:fullscreen .stage-controls, .stage:-webkit-full-screen .stage-controls{
-  position:absolute;
-  bottom:24px;
-}
+.stage-controls{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:auto;padding-top:16px;border-top:1px dashed var(--line);width:100%;max-width:480px}
+.stage-controls .btn{font-size:0.88rem;padding:7px 16px;border-radius:8px}
+.stage-controls .btn.alt{font-size:0.82rem;padding:6px 12px}
 .winners{list-style:none;padding:0;margin:0}
-.winners li{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:8px;
+.winners li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:8px;
   background:var(--win);border-left:5px solid var(--gold);border-radius:6px}
 @media (prefers-reduced-motion:no-preference){.stage.won .name{animation:pop .5s ease-out}}
 @keyframes pop{0%{transform:scale(.8);opacity:.3}100%{transform:scale(1);opacity:1}}
 
-  /* MHC Header & Sync Badges */
-  .mhc-brand-bar {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .mhc-logo {
-    height: 48px;
-    width: auto;
-    object-fit: contain;
-    background: #fff;
-    padding: 3px 6px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  }
-  .sync-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: rgba(31, 77, 58, 0.12);
-    color: var(--pine);
-    border: 1px solid var(--pine);
-  }
-  .sync-badge.online {
-    background: #dcfce7;
-    color: #166534;
-    border-color: #86efac;
-  }
-  .sync-badge.offline {
-    background: #f1f5f9;
-    color: #64748b;
-    border-color: #cbd5e1;
-  }
-  .pulse-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-    display: inline-block;
-  }
-
+/* Fullscreen Stage / Wall Projector Mode */
+.stage:fullscreen, .stage:-webkit-full-screen{
+  width:100vw;height:100vh;padding:40px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(circle at center, var(--surface) 20%, var(--bg) 100%);
+}
+.stage:fullscreen .name, .stage:-webkit-full-screen .name{font-size:clamp(4.5rem, 13vw, 8rem);margin:20px 0}
+.stage:fullscreen .meta, .stage:-webkit-full-screen .meta{font-size:1.8rem}
+.stage:fullscreen .stage-controls, .stage:-webkit-full-screen .stage-controls{position:absolute;bottom:24px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="mhc-brand-bar">
-      <img src="assets/mhc-logo.png" alt="May Harvest Corporation" class="mhc-logo" onerror="this.style.display='none'">
-      <div>
-        <div style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold);">May Harvest Corporation</div>
-        <h1>Christmas Party Raffle</h1>
-        <p>Register employee attendance, then draw the grand raffle winners.</p>
-      </div>
+    <div>
+      <h1 id="evName">Christmas Party Raffle</h1>
+      <p id="evSub">Register employees, then draw the winners.</p>
     </div>
-    <div class="count">
-      <div style="margin-bottom: 6px;">
-        <span class="sync-badge online" id="syncBadge"><span class="pulse-dot"></span> <span id="syncText">Cloud Live</span></span>
-      </div>
-      <b id="total">0</b>
-      <span>confirmed registered</span>
-      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;align-items:center;flex-wrap:wrap">
-        <span id="userBadge" style="display:none;font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;background:var(--pine);color:var(--pine-ink)"></span>
-        <button class="btn alt small" id="btnSyncNow" title="Force sync with cloud database">Sync</button>
-        <button class="btn alt small" id="lockAll" title="Logout or Lock session">Lock</button>
-      </div>
-    </div>
+    <div class="count"><b id="total">0</b><span>registered</span><span id="syncst" style="display:block;font-size:.75rem;color:var(--muted)">Syncing with Cloud</span><div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px"><button class="btn alt small" id="chgId">Change ID</button><button class="btn alt small" id="lockAll">Lock all</button></div></div>
   </header>
 
   <nav role="tablist">
@@ -261,32 +117,75 @@ textarea{resize:vertical}
     <button role="tab" id="t-list" aria-selected="false" aria-controls="allow">Allowed list</button>
     <button role="tab" id="t-man" aria-selected="false" aria-controls="manual">Manual entry</button>
     <button role="tab" id="t-draw" aria-selected="false" aria-controls="draw">Raffle draw</button>
+    <button role="tab" id="t-pick" aria-selected="false" aria-controls="pick">Draw picker</button>
+    <button role="tab" id="t-wall" aria-selected="false" aria-controls="wall">Video wall</button>
+    <button role="tab" id="t-sum" aria-selected="false" aria-controls="sum">Summary</button>
+    <button role="tab" id="t-event" aria-selected="false" aria-controls="evsec">Event</button>
+    <button role="tab" id="t-setup" aria-selected="false" aria-controls="setup">Setup</button>
   </nav>
+
+  <section id="pick" hidden>
+    <div class="panel stage">
+      <p class="hint" id="pinfo"></p>
+      <label for="pickName" style="text-align:left">Your name (recorded in the draw log)</label>
+      <input id="pickName" autocomplete="off" placeholder="e.g. Juan Dela Cruz">
+      <div class="name" id="pname">Ready</div>
+      <div class="meta" id="pmeta"></div>
+      <button class="btn" id="pgo" style="font-size:1.5rem;padding:18px 44px">DRAW</button>
+      <p class="msg" id="pmsg" role="status"></p>
+    </div>
+  </section>
+
+  <section id="wall" hidden>
+    <div class="panel stage" id="wbox">
+      <p class="hint" id="winfo"></p>
+      <div class="name wbig" id="wname">Ready</div>
+      <div class="meta" id="wmeta"></div>
+      <button class="btn alt small" id="wfs">Full screen</button>
+    </div>
+  </section>
+
+  <section id="sum" hidden>
+    <div class="panel" style="text-align:center">
+      <p class="hint" style="margin:0">Employees present</p>
+      <div id="sumBig" style="font:400 4rem/1.1 'Young Serif',Georgia,serif;color:var(--berry)">0</div>
+      <p class="hint" id="sumNote" style="margin:6px 0 0"></p>
+    </div>
+    <div class="panel table" id="sumT" style="margin-top:16px"></div>
+    <p class="hint" style="margin-top:10px">Totals only. No names are shown on this page.</p>
+  </section>
+
+  <section id="evsec" hidden>
+    <div class="panel">
+      <label for="ename">Event name</label>
+      <input id="ename" autocomplete="off" placeholder="e.g. Year-End Christmas Party 2026">
+      <div class="row">
+        <div><label for="etype">Type of occasion</label><input id="etype" list="etypes" autocomplete="off" placeholder="e.g. Christmas Party"><datalist id="etypes"><option>Christmas Party</option><option>Year-End Party</option><option>Anniversary</option><option>Team Building</option></datalist></div>
+        <div><label for="edate">Date of the event</label><input id="edate" type="date"></div>
+      </div>
+      <button class="btn" id="esave">Save event details</button>
+      <p class="msg" id="emsg" role="status"></p>
+    </div>
+  </section>
+
+  <section id="setup" hidden>
+    <div class="panel">
+      <p class="hint">Replace any ID here. Current IDs are never shown. Enter a new one and press Save.</p>
+      <div id="idRows"></div>
+      <p class="msg" id="smsg" role="status"></p>
+    </div>
+  </section>
 
   <section id="lock" hidden>
     <div class="panel">
-      <h2 id="lockTitle" style="margin:0 0 6px;font:400 1.4rem 'Young Serif',Georgia,serif">Security Login</h2>
-      <p class="hint" id="lockHint">Enter your assigned password to access this system.</p>
-      
-      <div style="margin-bottom:12px">
-        <label for="uRole">User Role (Optional)</label>
-        <select id="uRole">
-          <option value="auto">⚡ Auto-detect Role from Password</option>
-          <option value="president">👑 President</option>
-          <option value="admin">🛡️ Admin</option>
-          <option value="hr">👥 HR</option>
-          <option value="accounting">💼 Accounting</option>
-          <option value="wall">📺 Wall (Projector Display)</option>
-          <option value="picker">🎲 Picker (Raffle Draw)</option>
-        </select>
-      </div>
-
-      <label for="lid" id="l1">Password</label>
-      <input id="lid" type="password" autocomplete="current-password" placeholder="Enter password...">
-      
-      <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-        <button class="btn" id="unlock">Login & Unlock</button>
-      </div>
+      <h2 id="lockTitle" style="margin:0 0 6px;font:400 1.4rem 'Young Serif',Georgia,serif"></h2>
+      <p class="hint" id="lockHint"></p>
+      <label for="lid" id="l1">ID</label>
+      <input id="lid" type="password" autocomplete="off">
+      <div id="lid2wrap" hidden><label for="lid2" id="l2">Confirm ID</label><input id="lid2" type="password" autocomplete="off"></div>
+      <div id="lid3wrap" hidden><label for="lid3">Confirm new ID</label><input id="lid3" type="password" autocomplete="off"></div>
+      <button class="btn" id="unlock">Unlock</button>
+      <button class="btn alt" id="cancelChg" style="margin-left:8px" hidden>Cancel</button>
       <p class="msg" id="lmsg" role="status"></p>
     </div>
   </section>
@@ -356,6 +255,8 @@ textarea{resize:vertical}
         <div><label for="rset">Set</label><input id="rset" autocomplete="off" value="Set 1"></div>
         <div><label for="rcount">Number of draws</label><input id="rcount" type="number" min="1" inputmode="numeric" placeholder="e.g. 10"></div>
       </div>
+      <label for="rprize">Prize (optional)</label>
+      <input id="rprize" autocomplete="off" placeholder="e.g. Smart TV">
       <label>Agencies in this round</label>
       <div id="agChecks"></div>
       <label class="chk"><input type="checkbox" id="allAg"> All agencies</label>
@@ -372,75 +273,40 @@ textarea{resize:vertical}
       <div class="stage-controls">
         <button class="btn" id="go">Draw a winner</button>
         <button class="btn alt" id="btnSoundToggle" type="button" title="Toggle drum roll & celebration sound">🔊 Sound ON</button>
-        <button class="btn alt" id="btnWallFullscreen" type="button" title="Open Stage in Fullscreen for Wall / Projector">📺 Wall Projector Mode</button>
+        <button class="btn alt" id="wfsStage" type="button">Full screen</button>
       </div>
     </div>
     <div class="tools">
       <h2>Winners</h2>
-      <span><button class="btn small" id="expWin">Export winners (CSV)</button> <button class="btn alt small" id="clearWin">Reset winners</button></span>
+      <span><button class="btn small" id="expWin">Export winners (CSV)</button> <button class="btn small" id="expLog">Export draw log (CSV)</button> <button class="btn alt small" id="clearWin">Reset winners</button></span>
+    </div>
+    <div class="panel" id="sigPanel" hidden style="margin-bottom:14px">
+      <p class="hint" id="sigWho" style="margin:0 0 8px"></p>
+      <canvas id="sig" width="600" height="200" style="width:100%;max-width:600px;height:auto;aspect-ratio:3/1;background:#fff;border:1.5px solid var(--line);border-radius:8px;touch-action:none;display:block"></canvas>
+      <p class="hint" style="margin:6px 0 10px">The winner signs in the box above with a finger or mouse.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn" id="sigSave">Save signature and mark claimed</button>
+        <button class="btn alt" id="sigNoSig">Mark claimed without signature</button>
+        <button class="btn alt" id="sigClear">Clear</button>
+        <button class="btn alt" id="sigCancel">Cancel</button>
+      </div>
     </div>
     <div id="winners"></div>
     <p class="msg" id="xmsg2" role="status"></p>
+    <div class="tools"><h2>Draw log</h2><span></span></div>
+    <div class="panel table" id="logv"></div>
   </section>
 </div>
 
 <script>
 (function(){
-  var KEY_E='xmasRaffle.employees', KEY_W='xmasRaffle.winners', KEY_A='xmasRaffle.allowed', KEY_P='xmasRaffle.pending', KEY_I='xmasRaffle.ids', KEY_R='xmasRaffle.rounds';
+  var KEY_E='xmasRaffle.employees', KEY_W='xmasRaffle.winners', KEY_A='xmasRaffle.allowed', KEY_P='xmasRaffle.pending', KEY_I='xmasRaffle.ids2', KEY_R='xmasRaffle.rounds', KEY_L='xmasRaffle.log', KEY_V='xmasRaffle.event';
   var AGENCIES=['MHC','Workbridge','Multi','Top Jinzai','BLGM','Omnichron'];
   function canon(s){var n=norm(s);return AGENCIES.filter(function(a){return norm(a)===n})[0]||null}
-  var CREDENTIALS = {
-    president: { name: 'President', pass: 'claire123', icon: '👑', tabs: ['reg', 'list', 'man', 'draw'], desc: 'Master Access' },
-    admin: { name: 'Admin', pass: '0000', icon: '🛡️', tabs: ['reg', 'list', 'man', 'draw'], desc: 'Full System Access' },
-    hr: { name: 'HR', pass: 'HR2026cHRISTMAS', icon: '👥', tabs: ['reg', 'man'], desc: 'Registration & Manual Submission' },
-    accounting: { name: 'Accounting', pass: 'Acctg2026IDChristmas', icon: '💼', tabs: ['list', 'man', 'reg'], desc: 'Allowed List & Approval Queue' },
-    wall: { name: 'Wall', pass: '5555', icon: '📺', tabs: ['draw'], desc: 'Wall / Projector Display' },
-    picker: { name: 'Picker', pass: '7777', icon: '🎲', tabs: ['draw'], desc: 'Raffle Draw & Spinner' }
-  };
-
-  var TAB_NAMES = {
-    reg: 'Attendee Registration',
-    list: 'Allowed Employees List',
-    man: 'Manual Entry & Approvals',
-    draw: 'Raffle Draw Stage'
-  };
-
-  var TAB_PERMS = {
-    reg: ['hr', 'accounting', 'admin', 'president'],
-    list: ['accounting', 'admin', 'president'],
-    man: ['hr', 'accounting', 'admin', 'president'],
-    draw: ['picker', 'wall', 'admin', 'president']
-  };
-
-  var currentUser = sessionStorage.getItem('mhc_raffle_user') || null;
-  var employees=load(KEY_E), winners=load(KEY_W), allowed=load(KEY_A), pending=load(KEY_P), ids=loadObj(KEY_I), rounds=load(KEY_R), activeId=null;
-  var spinning=false, current='reg', last=Date.now();
-
-  function isTabAccessible(role, tabKey) {
-    if (!role || !CREDENTIALS[role]) return false;
-    return CREDENTIALS[role].tabs.indexOf(tabKey) !== -1;
-  }
-
-  function getRequiredRolesText(tabKey) {
-    var allowedRoles = TAB_PERMS[tabKey] || [];
-    return allowedRoles.map(function(r){ return CREDENTIALS[r].icon + ' ' + CREDENTIALS[r].name; }).join(', ');
-  }
-
-  function updateUserBadge() {
-    var badge = $('userBadge'), lockBtn = $('lockAll');
-    if (currentUser && CREDENTIALS[currentUser]) {
-      var u = CREDENTIALS[currentUser];
-      if (badge) {
-        badge.style.display = 'inline-flex';
-        badge.innerHTML = u.icon + ' ' + u.name;
-        badge.title = 'Logged in as ' + u.name + ' (' + u.desc + ')';
-      }
-      if (lockBtn) lockBtn.textContent = 'Logout';
-    } else {
-      if (badge) badge.style.display = 'none';
-      if (lockBtn) lockBtn.textContent = 'Lock';
-    }
-  }
+  var ROLES={hr:'HR ID',acctg:'Accounting ID',admin:'Admin ID',wall:'Video wall ID',picker:'Draw picker ID',president:'President ID'};
+  var TABROLE={reg:'hr',list:'acctg',man:'hr',draw:'admin',pick:'picker',wall:'wall',sum:null,event:'admin',setup:'admin'};
+  var employees=load(KEY_E), winners=load(KEY_W), allowed=load(KEY_A), pending=load(KEY_P), ids=loadObj(KEY_I), rounds=load(KEY_R), log=load(KEY_L), evInfo=loadObj(KEY_V), live=null, drawBy=null, dbh=null, seen={}, synced={}, activeId=null;
+  var spinning=false, unlocked={}, current='reg', last=Date.now(), changing=false;
   function loadObj(k){try{var v=JSON.parse(localStorage.getItem(k));return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return {}}}
   function sha(s){
     try{return crypto.subtle.digest('SHA-256',new TextEncoder().encode('xmas|'+s)).then(function(b){
@@ -450,144 +316,43 @@ textarea{resize:vertical}
   var $=function(id){return document.getElementById(id)};
 
   function load(k){try{var v=JSON.parse(localStorage.getItem(k));return Array.isArray(v)?v:[]}catch(e){return []}}
-  function setSyncStatus(online) {
-    var b = $('syncBadge'), t = $('syncText');
-    if (!b || !t) return;
-    if (online) {
-      b.className = 'sync-badge online';
-      t.textContent = 'Cloud Live';
-    } else {
-      b.className = 'sync-badge offline';
-      t.textContent = 'Local Mode';
-    }
-  }
-
-  function pushCloudData() {
-    try {
-      fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employees: employees,
-          winners: winners,
-          allowed: allowed,
-          pending: pending,
-          ids: ids,
-          rounds: rounds
-        })
-      }).then(function(r){
-        if (r.ok) setSyncStatus(true);
-        else setSyncStatus(false);
-      }).catch(function(){
-        setSyncStatus(false);
-      });
-    } catch(e) {}
-  }
-
-  function pullCloudData() {
-    try {
-      fetch('/api/data', { cache: 'no-store' })
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          if (d && typeof d === 'object') {
-            setSyncStatus(true);
-            var updated = false;
-            // Merge employees
-            if (Array.isArray(d.employees) && d.employees.length > 0) {
-              var map = {};
-              employees.forEach(function(e){ map[norm(e.id)] = e; });
-              d.employees.forEach(function(e){
-                if (!map[norm(e.id)]) { map[norm(e.id)] = e; updated = true; }
-              });
-              employees = Object.values(map);
-            }
-            if (Array.isArray(d.allowed) && d.allowed.length > allowed.length) {
-              allowed = d.allowed;
-              updated = true;
-            }
-            if (Array.isArray(d.winners) && d.winners.length > winners.length) {
-              winners = d.winners;
-              updated = true;
-            }
-            if (Array.isArray(d.rounds) && d.rounds.length > rounds.length) {
-              rounds = d.rounds;
-              updated = true;
-            }
-            if (d.ids && typeof d.ids === 'object') {
-              ids = Object.assign({}, ids, d.ids);
-            }
-            if (updated) {
-              localStorage.setItem(KEY_E, JSON.stringify(employees));
-              localStorage.setItem(KEY_W, JSON.stringify(winners));
-              localStorage.setItem(KEY_A, JSON.stringify(allowed));
-              localStorage.setItem(KEY_P, JSON.stringify(pending));
-              localStorage.setItem(KEY_I, JSON.stringify(ids));
-              localStorage.setItem(KEY_R, JSON.stringify(rounds));
-              render();
-            }
-          }
-        }).catch(function(){
-          setSyncStatus(false);
-        });
-    } catch(e) {}
-  }
-
   function save(){
-    try{
-      localStorage.setItem(KEY_E,JSON.stringify(employees));
-      localStorage.setItem(KEY_W,JSON.stringify(winners));
-      localStorage.setItem(KEY_A,JSON.stringify(allowed));
-      localStorage.setItem(KEY_P,JSON.stringify(pending));
-      localStorage.setItem(KEY_I,JSON.stringify(ids));
-      localStorage.setItem(KEY_R,JSON.stringify(rounds));
-    }catch(e){}
-    pushCloudData();
+    try{push()}catch(e){}
+    try{localStorage.setItem(KEY_E,JSON.stringify(employees));localStorage.setItem(KEY_W,JSON.stringify(winners));localStorage.setItem(KEY_A,JSON.stringify(allowed));localStorage.setItem(KEY_P,JSON.stringify(pending));localStorage.setItem(KEY_I,JSON.stringify(ids));localStorage.setItem(KEY_R,JSON.stringify(rounds));localStorage.setItem(KEY_L,JSON.stringify(log));localStorage.setItem(KEY_V,JSON.stringify(evInfo))}catch(e){}
+    try{pushServerData()}catch(e){}
   }
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function say(t,cls){var m=$('msg');m.textContent=t;m.className='msg '+(cls||'')}
 
-  var TABS={reg:'reg',list:'allow',man:'manual',draw:'draw'};
-  function tab(which, note) {
-    current = which;
-    var open = isTabAccessible(currentUser, which);
+  var TABS={reg:'reg',list:'allow',man:'manual',draw:'draw',pick:'pick',wall:'wall',sum:'sum',event:'evsec',setup:'setup'};
+  function tab(which,note,chg){
+    current=which;changing=!!chg&&!!ids[TABROLE[which]];
+    var role=TABROLE[which], open=isOpen(which)&&!changing;
     Object.keys(TABS).forEach(function(k){
-      $(TABS[k]).hidden = !(open && k === which);
-      $('t-' + k).setAttribute('aria-selected', k === which);
+      $(TABS[k]).hidden=!(open&&k===which);
+      $('t-'+k).setAttribute('aria-selected',k===which);
     });
-    $('lock').hidden = open;
-    updateUserBadge();
-
-    if (!open) {
-      var reqText = getRequiredRolesText(which);
-      if (currentUser && CREDENTIALS[currentUser]) {
-        $('lockTitle').textContent = CREDENTIALS[currentUser].icon + ' ' + CREDENTIALS[currentUser].name + ' — Restricted';
-        $('lockHint').textContent = 'Your current role does not have access to ' + TAB_NAMES[which] + '. Enter a password for: ' + reqText + '.';
-      } else {
-        $('lockTitle').textContent = 'Security Login Required';
-        $('lockHint').textContent = 'Enter your password to open ' + TAB_NAMES[which] + '. Permitted: ' + reqText + '.';
-      }
-      $('lid').value = '';
-      if ($('uRole')) $('uRole').value = 'auto';
-      $('lmsg').textContent = note || '';
-      $('lmsg').className = 'msg ' + (note ? 'ok' : '');
-      setTimeout(function(){ $('lid').focus(); }, 120);
+    $('lock').hidden=open;
+    if(!open){
+      var setup=!ids[role], nm=ROLES[role];
+      $('lockTitle').textContent=changing?'Change '+nm:nm+(setup?' setup':' required');
+      $('lockHint').textContent=changing?'Enter the current '+nm+', then choose a new one.':setup?'No '+nm+' has been set yet. Choose one now and keep it private. It will be needed to open this tab.':'Enter the '+nm+' to open this tab.';
+      $('l1').textContent=changing?'Current ID':setup?'New ID':'ID';
+      $('l2').textContent=changing?'New ID':'Confirm ID';
+      $('lid2wrap').hidden=!(setup||changing);
+      $('lid3wrap').hidden=!changing;
+      $('cancelChg').hidden=!changing;
+      $('unlock').textContent=changing?'Save new ID':setup?'Save ID and unlock':'Unlock';
+      $('lid').value=$('lid2').value=$('lid3').value='';
+      $('lmsg').textContent=note||'';$('lmsg').className='msg ok';
     }
-
-    if (open && which === 'draw') {
-      renderDrawInfo();
-      if (currentUser === 'wall') {
-        $('go').style.display = 'none';
-        if ($('addRound')) $('addRound').parentElement.style.display = 'none';
-        $('stage').scrollIntoView({ behavior: 'smooth' });
-      } else {
-        $('go').style.display = '';
-        if ($('addRound')) $('addRound').parentElement.style.display = '';
-      }
-    }
+    if(open&&which==='draw')renderDrawInfo();
+    if(open&&which==='setup')renderSetup();
   }
   $('t-reg').onclick=function(){tab('reg')};
   $('t-list').onclick=function(){tab('list')};
   $('t-man').onclick=function(){tab('man')};
+  ['pick','wall','sum','event','setup'].forEach(function(k){$('t-'+k).onclick=function(){tab(k)}});
   $('t-draw').onclick=function(){tab('draw')};
 
   function render(){
@@ -601,8 +366,7 @@ textarea{resize:vertical}
         rows.map(function(e){return '<tr><td>'+esc(e.name)+'</td><td>'+esc(e.id)+'</td><td>'+esc(e.dept||'–')+'</td><td>'+esc(e.unit||'–')+
           '</td><td><button class="btn alt small" data-rm="'+esc(e.id)+'">Remove</button></td></tr>'}).join('')+'</tbody></table>';
     }
-    renderWinners();renderRounds();
-    renderDrawInfo();
+    renderWinners();renderRounds();renderDrawInfo();renderExtra();
   }
 
   function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLowerCase()}
@@ -657,87 +421,45 @@ textarea{resize:vertical}
   $('load').onclick=function(){var t=$('paste').value;if(!t.trim()){amsg('Paste the list first.','err');return}importList(t);$('paste').value=''};
   $('clearAllowed').onclick=function(){if(allowed.length&&confirm('Remove the allowed list? No one can register until a new list is loaded.')){allowed=[];save();render()}};
 
-  $('unlock').onclick = function() {
-    var v = $('lid').value.trim();
-    var selRole = $('uRole') ? $('uRole').value : 'auto';
-    function lm(t, c) { $('lmsg').textContent = t; $('lmsg').className = 'msg ' + (c || 'err'); }
-    if (!v) { lm('Please enter your password.'); return; }
+  $('unlock').onclick=function(){
+    var role=TABROLE[current], v=$('lid').value.trim(), setup=!ids[role];
+    function lm(t){$('lmsg').textContent=t;$('lmsg').className='msg err'}
+    if(!v){lm('Enter the ID.');return}
+    if(setup){
+      if(v.length<4){lm('Use at least 4 characters.');return}
+      if(v!==$('lid2').value.trim()){lm('The two entries do not match.');return}
+      sha(role+v).then(function(h){ids[role]=h;unlocked[role]=true;last=Date.now();save();tab(current)});
+    }else if(changing){
+      var n=$('lid2').value.trim();
+      if(n.length<4){lm('Use at least 4 characters for the new ID.');return}
+      if(n!==$('lid3').value.trim()){lm('The new ID entries do not match.');return}
+      sha(role+v).then(function(h){
+        if(h!==ids[role]){lm('The current ID is not correct.');return}
+        sha(role+n).then(function(h2){ids[role]=h2;unlocked[role]=false;save();tab(current,ROLES[role]+' changed. Enter the new ID to continue.')});
+      });
+    }else{
+      // Support built-in IDs directly
+      if (v === 'claire123') { unlocked.admin = true; unlocked[role] = true; last = Date.now(); tab(current); return; }
+      if (v === '0000') { unlocked.admin = true; unlocked[role] = true; last = Date.now(); tab(current); return; }
+      if (v === 'HR2026cHRISTMAS' && (role==='hr'||current==='reg'||current==='manual')) { unlocked.hr = true; last = Date.now(); tab(current); return; }
+      if (v === 'Acctg2026IDChristmas' && (role==='acctg'||current==='allow'||current==='manual')) { unlocked.acctg = true; last = Date.now(); tab(current); return; }
+      if (v === '5555' && (current==='wall'||current==='draw')) { unlocked.wall = true; last = Date.now(); tab(current); return; }
+      if (v === '7777' && (current==='pick'||current==='draw')) { unlocked.picker = true; last = Date.now(); tab(current); return; }
 
-    var matchedRole = null;
-    if (selRole !== 'auto') {
-      if (CREDENTIALS[selRole] && CREDENTIALS[selRole].pass === v) {
-        matchedRole = selRole;
-      }
-    } else {
-      for (var r in CREDENTIALS) {
-        if (CREDENTIALS[r].pass === v) {
-          matchedRole = r;
-          break;
-        }
-      }
-    }
-
-    if (!matchedRole) {
-      lm('Incorrect password. Please verify and try again.');
-      return;
-    }
-
-    if (!isTabAccessible(matchedRole, current)) {
-      lm('Logged in as ' + CREDENTIALS[matchedRole].icon + ' ' + CREDENTIALS[matchedRole].name + ', but this tab is not accessible. Permitted: ' + getRequiredRolesText(current) + '.');
-      currentUser = matchedRole;
-      sessionStorage.setItem('mhc_raffle_user', currentUser);
-      updateUserBadge();
-      return;
-    }
-
-    currentUser = matchedRole;
-    sessionStorage.setItem('mhc_raffle_user', currentUser);
-    updateUserBadge();
-    $('lid').value = '';
-    lm('Welcome, ' + CREDENTIALS[currentUser].name + '!', 'ok');
-    tab(current);
-  };
-
-  $('lid').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') $('unlock').click();
-  });
-
-  $('lockAll').onclick = function() {
-    if (currentUser) {
-      var prev = CREDENTIALS[currentUser].name;
-      currentUser = null;
-      sessionStorage.removeItem('mhc_raffle_user');
-      updateUserBadge();
-      tab(current, prev + ' logged out successfully.');
-    } else {
-      tab(current);
+      Promise.all([sha(role+v),sha('admin'+v),sha('president'+v)]).then(function(hs){
+        if(hs[0]===ids[role]){unlocked[role]=true;last=Date.now();tab(current)}
+        else if(hs[1]===ids.admin||hs[2]===ids.president){unlocked.admin=true;unlocked[role]=true;last=Date.now();tab(current)}
+        else if((current==='wall'||current==='pick')&&hs[1]===ids.admin){unlocked.admin=true;last=Date.now();tab(current)}
+        else lm('That ID is not correct.');
+      });
     }
   };
-
-  if ($('btnWallFullscreen')) {
-    $('btnWallFullscreen').onclick = function() {
-      var el = $('stage');
-      if (!document.fullscreenElement) {
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-      }
-    };
-  }
-
-  var lastActivity = Date.now();
-  ['click', 'keydown'].forEach(function(ev) {
-    document.addEventListener(ev, function() { lastActivity = Date.now(); });
-  });
-  setInterval(function() {
-    if (currentUser && Date.now() - lastActivity > 900000) {
-      currentUser = null;
-      sessionStorage.removeItem('mhc_raffle_user');
-      updateUserBadge();
-      tab(current, 'Session locked due to inactivity.');
-    }
-  }, 30000);
+  ['lid','lid2','lid3'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')$('unlock').click()})});
+  $('lockAll').onclick=function(){unlocked={};tab(current)};
+  $('chgId').onclick=function(){tab(current,'',true)};
+  $('cancelChg').onclick=function(){tab(current)};
+  ['click','keydown'].forEach(function(ev){document.addEventListener(ev,function(){last=Date.now()})});
+  setInterval(function(){if(Object.keys(unlocked).length&&Date.now()-last>900000){unlocked={};tab(current)}},30000);
 
   function ptable(act){
     if(!pending.length)return '<div class="empty">'+(act?'Nothing to approve.':'No entries waiting for approval.')+'</div>';
@@ -791,17 +513,24 @@ textarea{resize:vertical}
       var csvData = toCSV(rows);
       var blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
       var a = document.createElement('a');
-      var filename = name + '-' + stamp() + '.csv';
       a.href = URL.createObjectURL(blob);
-      a.download = filename;
+      a.download = name + '-' + stamp() + '.csv';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
       note('Export ready: ' + (rows.length - 1) + (rows.length === 2 ? ' row.' : ' rows.'), 'ok');
-    } catch(err) {
-      console.warn('Blob export failed, fallback:', err);
-      note('Export could not be saved: ' + err.message, 'err');
+    } catch(e) {
+      if(window.claude && claude.use){
+        claude.use('downloads').then(function(dl){
+          if(!dl){note('Export could not be saved.','err');return}
+          dl.save({filename:name+'-'+stamp()+'.csv',data:toCSV(rows)}).then(
+            function(){note('Export ready: '+(rows.length-1)+' rows.','ok')},
+            function(){note('Export cancelled.','err')});
+        }).catch(function(){note('Could not save file.','err')});
+      } else {
+        note('Could not save file: ' + e.message, 'err');
+      }
     }
   }
   $('expEntries').onclick=function(){
@@ -810,10 +539,204 @@ textarea{resize:vertical}
     exportCSV('confirmed-entries',rows,$('xmsg1'));
   };
   $('expWin').onclick=function(){
-    var rows=[['Set','Round agencies','Draw no.','Full name','Employee number','Agency','Department']];
-    rounds.forEach(function(r){winners.filter(function(w){return w.rid===r.id}).forEach(function(w){rows.push([r.set,rlabel(r),w.n||'',w.name,w.id,w.dept,w.unit||''])})});
-    winners.filter(function(w){return !rounds.some(function(r){return r.id===w.rid})}).forEach(function(w){rows.push(['Other draws','',w.n||'',w.name,w.id,w.dept,w.unit||''])});
+    var rows=[['Set','Round agencies','Draw no.','Full name','Employee number','Agency','Department','Prize','Claimed','Claimed at']];
+    rounds.forEach(function(r){winners.filter(function(w){return w.rid===r.id}).forEach(function(w){rows.push([r.set,rlabel(r),w.n||'',w.name,w.id,w.dept,w.unit||'',r.prize||'',w.claimed?'Yes':'No',w.claimed?new Date(w.claimed).toLocaleString():''])})});
+    winners.filter(function(w){return !rounds.some(function(r){return r.id===w.rid})}).forEach(function(w){rows.push(['Other draws','',w.n||'',w.name,w.id,w.dept,w.unit||'','',w.claimed?'Yes':'No',w.claimed?new Date(w.claimed).toLocaleString():''])});
     exportCSV('raffle-winners',rows,$('xmsg2'));
+  };
+
+  var sigIdx=-1, drawing=false, dirty=false, cv=$('sig'), cx=cv.getContext('2d');
+  cx.lineWidth=3;cx.lineCap='round';cx.lineJoin='round';
+  function sigClear(){cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.strokeStyle='#111';dirty=false}
+  function sigPos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*cv.width/r.width,y:(e.clientY-r.top)*cv.height/r.height}}
+  sigClear();
+  cv.addEventListener('pointerdown',function(e){drawing=true;dirty=true;try{cv.setPointerCapture(e.pointerId)}catch(x){}var p=sigPos(e);cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x+0.1,p.y+0.1);cx.stroke()});
+  cv.addEventListener('pointermove',function(e){if(!drawing)return;var p=sigPos(e);cx.lineTo(p.x,p.y);cx.stroke()});
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){cv.addEventListener(ev,function(){drawing=false})});
+  function sigClose(){sigIdx=-1;$('sigPanel').hidden=true}
+  function claim(sig){var w=winners[sigIdx];if(!w)return;w.claimed=Date.now();if(sig)w.sig=sig;else delete w.sig;save();sigClose();render()}
+  $('sigClear').onclick=sigClear;
+  $('sigCancel').onclick=sigClose;
+  $('sigSave').onclick=function(){
+    if(!dirty){$('xmsg2').textContent='Sign in the box first, or choose Mark claimed without signature.';$('xmsg2').className='msg err';return}
+    claim(cv.toDataURL('image/png'));
+  };
+  $('sigNoSig').onclick=function(){claim(null)};
+  $('winners').onclick=function(e){
+    var c=e.target.getAttribute('data-claim'), u=e.target.getAttribute('data-unc');
+    if(c!=null){
+      var w=winners[+c];if(!w)return;
+      sigIdx=+c;sigClear();
+      $('sigWho').textContent='Claim for '+w.name+' (employee number '+w.id+')';
+      $('xmsg2').textContent='';$('sigPanel').hidden=false;$('sigPanel').scrollIntoView({block:'nearest'});
+    }else if(u!=null){
+      var x=winners[+u];if(x){delete x.claimed;delete x.sig;save();render()}
+    }
+  };
+
+  var DEF={hr:'HR2026cHRISTMAS',acctg:'Acctg2026IDChristmas',admin:'0000',wall:'5555',picker:'7777',president:'claire123'};
+  function isOpen(w){var r=TABROLE[w];return r===null||!!unlocked[r]||((w==='wall'||w==='pick'||w==='draw')&&!!unlocked.admin)}
+  function seedIds(){
+    return Promise.all(Object.keys(DEF).filter(function(k){return !ids[k]}).map(function(k){return sha(k+DEF[k]).then(function(h){if(!ids[k])ids[k]=h})}));
+  }
+  var SK={employees:function(){return employees},winners:function(){return winners},rounds:function(){return rounds},allowed:function(){return allowed},pending:function(){return pending},ids:function(){return ids},evInfo:function(){return evInfo},log:function(){return log}};
+  function apply(k,v){
+    if(k==='employees')employees=v;else if(k==='winners')winners=v;else if(k==='rounds')rounds=v;else if(k==='allowed')allowed=v;
+    else if(k==='pending')pending=v;else if(k==='ids'){ids=v;seedIds()}else if(k==='evInfo')evInfo=v;else if(k==='log')log=v;
+  }
+  function push(){
+    if(!dbh)return;
+    Object.keys(SK).forEach(function(k){
+      if(!synced[k])return;
+      var j=JSON.stringify(SK[k]());
+      if(j!==seen[k]){seen[k]=j;dbh.doc('sync/'+k).set({v:j,t:Date.now()}).catch(function(){})}
+    });
+  }
+
+  // Cloud Sync via Server API (Render / Node.js)
+  function pushServerData() {
+    try {
+      fetch('/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employees: employees,
+          winners: winners,
+          allowed: allowed,
+          pending: pending,
+          ids: ids,
+          rounds: rounds,
+          log: log,
+          evInfo: evInfo
+        })
+      }).then(function(res){
+        if (res.ok) $('syncst').textContent = 'Cloud Live';
+      }).catch(function(){});
+    } catch(e){}
+  }
+
+  function pullServerData() {
+    try {
+      fetch('/api/data', { cache: 'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){
+          if (!d) return;
+          var updated = false;
+          if (Array.isArray(d.employees) && JSON.stringify(d.employees) !== JSON.stringify(employees)) { employees = d.employees; updated = true; }
+          if (Array.isArray(d.winners) && JSON.stringify(d.winners) !== JSON.stringify(winners)) { winners = d.winners; updated = true; }
+          if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) { allowed = d.allowed; updated = true; }
+          if (Array.isArray(d.pending) && JSON.stringify(d.pending) !== JSON.stringify(pending)) { pending = d.pending; updated = true; }
+          if (Array.isArray(d.rounds) && JSON.stringify(d.rounds) !== JSON.stringify(rounds)) { rounds = d.rounds; updated = true; }
+          if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
+          if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
+          if (updated) {
+            save();
+            render();
+          }
+          $('syncst').textContent = 'Cloud Live';
+        }).catch(function(){
+          $('syncst').textContent = 'Local Mode';
+        });
+    } catch(e){}
+  }
+
+  setInterval(pullServerData, 8000);
+  pullServerData();
+
+  function connect(){
+    if(!window.claude||!claude.use)return;
+    claude.use('db').then(function(d){
+      if(!d)return;
+      dbh=d;$('syncst').textContent='Live sync on';
+      Object.keys(SK).concat(['live']).forEach(function(k){
+        d.doc('sync/'+k).onSnapshot(function(s){
+          synced[k]=true;
+          if(!s.exists)return;
+          var v=s.data().v;
+          if(v===seen[k])return;
+          seen[k]=v;
+          var o;try{o=JSON.parse(v)}catch(e){return}
+          if(k==='live'){live=o;renderLive();return}
+          apply(k,o);save();render();
+        },function(){});
+      });
+    }).catch(function(){});
+  }
+  function liveSet(o){
+    o.ts=Date.now();live=o;renderLive();
+    if(dbh){var j=JSON.stringify(o);seen.live=j;dbh.doc('sync/live').set({v:j,t:o.ts}).catch(function(){})}
+  }
+  var shuf=null;
+  function renderLive(){
+    $('pinfo').textContent=$('rinfo').textContent;
+    var d=live||{}, on=d.phase==='drawing'&&Date.now()-d.ts<20000;
+    $('winfo').textContent=d.info||$('rinfo').textContent;
+    $('pgo').disabled=$('go').disabled||on;
+    if(on){
+      if(!shuf)shuf=setInterval(function(){
+        if(!live||Date.now()-live.ts>20000){renderLive();return}
+        var e=employees[Math.floor(Math.random()*employees.length)];
+        if(e)$('wname').textContent=$('pname').textContent=e.name;
+      },70);
+      $('wmeta').textContent=$('pmeta').textContent='Drawing…';
+    }else{
+      if(shuf){clearInterval(shuf);shuf=null}
+      var won=d.phase==='won';
+      $('wname').textContent=$('pname').textContent=won?d.name:'Ready';
+      $('wmeta').textContent=$('pmeta').textContent=won?d.meta:'';
+    }
+  }
+  function renderEvent(){
+    var e=evInfo||{}, nm=e.name||'Christmas Party Raffle', dt='';
+    if(e.date){var d=new Date(e.date+'T00:00:00');dt=isNaN(d)?e.date:d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}
+    $('evName').textContent=nm;
+    $('evSub').textContent=[e.type,dt].filter(Boolean).join(' · ')||'Register employees, then draw the winners.';
+    document.title=nm;
+    [['ename','name'],['etype','type'],['edate','date']].forEach(function(p){if(document.activeElement!==$(p[0]))$(p[0]).value=e[p[1]]||''});
+  }
+  function renderSummary(){
+    var pr={},ex={},wn={},cl=0,tp=0,te=0,tw=0;
+    AGENCIES.forEach(function(a){pr[a]=0;ex[a]=0;wn[a]=0});
+    employees.forEach(function(e){var c=canon(e.dept);if(c)pr[c]++});
+    allowed.forEach(function(e){var c=canon(e.dept);if(c)ex[c]++});
+    winners.forEach(function(w){var c=canon(w.dept);if(c)wn[c]++;if(w.claimed)cl++});
+    $('sumT').innerHTML='<table><thead><tr><th>Agency</th><th>Present</th><th>On the list</th><th>Raffle winners</th></tr></thead><tbody>'+
+      AGENCIES.map(function(a){tp+=pr[a];te+=ex[a];tw+=wn[a];return '<tr><td>'+esc(a)+'</td><td>'+pr[a]+'</td><td>'+ex[a]+'</td><td>'+wn[a]+'</td></tr>'}).join('')+
+      '<tr><td><b>Total</b></td><td><b>'+tp+'</b></td><td><b>'+te+'</b></td><td><b>'+tw+'</b></td></tr></tbody></table>';
+    $('sumBig').textContent=tp;
+    $('sumNote').textContent='Raffle prizes claimed: '+cl+' of '+winners.length;
+  }
+  function renderLog(){
+    $('logv').innerHTML=log.length?'<table><thead><tr><th>Time</th><th>Pressed by</th><th>Round</th><th>Draw no.</th><th>Winner</th></tr></thead><tbody>'+
+      log.slice().reverse().map(function(l){return '<tr><td>'+esc(new Date(l.t).toLocaleString())+'</td><td>'+esc(l.by)+'</td><td>'+esc(l.round)+'</td><td>'+l.n+'</td><td>'+esc(l.name)+' ('+esc(l.id)+')</td></tr>'}).join('')+'</tbody></table>':'<div class="empty">No draws logged yet.</div>';
+  }
+  function renderExtra(){renderEvent();renderSummary();renderLog();renderLive()}
+  function renderSetup(){
+    $('idRows').innerHTML=Object.keys(DEF).map(function(k){return '<div class="row" style="align-items:end"><div><label for="nid-'+k+'">'+ROLES[k]+'</label><input id="nid-'+k+'" type="password" autocomplete="new-password" placeholder="Enter a new '+ROLES[k]+'"></div><div><button class="btn small" style="margin-bottom:14px" data-setid="'+k+'">Save '+ROLES[k]+'</button></div></div>'}).join('');
+  }
+  $('idRows').onclick=function(e){
+    var k=e.target.getAttribute('data-setid');if(!k)return;
+    var v=$('nid-'+k).value.trim(), m=$('smsg');
+    if(v.length<4){m.textContent='Use at least 4 characters.';m.className='msg err';return}
+    sha(k+v).then(function(h){ids[k]=h;save();$('nid-'+k).value='';m.textContent=ROLES[k]+' updated.';m.className='msg ok'});
+  };
+  $('esave').onclick=function(){
+    evInfo={name:$('ename').value.trim(),type:$('etype').value.trim(),date:$('edate').value};
+    save();render();$('emsg').textContent='Event details saved.';$('emsg').className='msg ok';
+  };
+  $('pgo').onclick=function(){
+    var n=$('pickName').value.trim(), m=$('pmsg');
+    if(!n){m.textContent='Enter your name first. It is recorded in the draw log.';m.className='msg err';return}
+    m.textContent='';drawBy='Picker: '+n;$('go').click();
+  };
+  $('wfs').onclick=function(){var el=$('wbox');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
+  if ($('wfsStage')) {
+    $('wfsStage').onclick=function(){var el=$('stage');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
+  }
+  $('expLog').onclick=function(){
+    var rows=[['Time','Pressed by','Round','Draw no.','Winner','Employee number']];
+    log.forEach(function(l){rows.push([new Date(l.t).toLocaleString(),l.by,l.round,l.n,l.name,l.id])});
+    exportCSV('draw-log',rows,$('xmsg2'));
   };
 
   // Stored fields: dept = agency, unit = department
@@ -840,13 +763,18 @@ textarea{resize:vertical}
       return (r.all||r.ag.some(function(a){return norm(a)===norm(e.dept)}))&&!won[norm(e.id)];
     });
   }
-  function wli(w){return '<li><span>'+(w.n?'#'+w.n+' ':'')+'<b>'+esc(w.name)+'</b></span><span>'+esc(w.id)+(w.dept?' · '+esc(w.dept):'')+(w.unit?' · '+esc(w.unit):'')+'</span></li>'}
+  function wli(w){
+    var i=winners.indexOf(w), ok=/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(w.sig||'');
+    return '<li><span>'+(w.n?'#'+w.n+' ':'')+'<b>'+esc(w.name)+'</b></span><span>'+esc(w.id)+(w.dept?' · '+esc(w.dept):'')+(w.unit?' · '+esc(w.unit):'')+'</span><span class="cl">'+
+      (w.claimed?'<span class="tag on">Claimed '+esc(new Date(w.claimed).toLocaleString())+'</span>'+(ok?'<img class="sig" src="'+w.sig+'" alt="Signature of '+esc(w.name)+'">':'')+'<button class="btn alt small" data-unc="'+i+'">Undo</button>'
+        :'<span class="tag">Unclaimed</span><button class="btn small" data-claim="'+i+'">Mark claimed</button>')+'</span></li>';
+  }
   function renderWinners(){
     if(!winners.length){$('winners').innerHTML='<div class="empty">No winners drawn yet.</div>';return}
-    var h='';
+    var cl=winners.filter(function(w){return w.claimed}).length, h='<p class="hint">Claimed '+cl+' of '+winners.length+'. '+(winners.length-cl)+' still unclaimed.</p>';
     rounds.forEach(function(r){
       var ws=winners.filter(function(w){return w.rid===r.id});
-      if(ws.length)h+='<h3 class="wh">'+esc(r.set)+' · '+esc(rlabel(r))+' ('+ws.length+' of '+r.total+')</h3><ul class="winners">'+ws.map(wli).join('')+'</ul>';
+      if(ws.length)h+='<h3 class="wh">'+esc(r.set)+' · '+esc(rlabel(r))+(r.prize?' · '+esc(r.prize):'')+' ('+ws.length+' of '+r.total+' drawn, '+ws.filter(function(w){return w.claimed}).length+' claimed)</h3><ul class="winners">'+ws.map(wli).join('')+'</ul>';
     });
     var other=winners.filter(function(w){return !rounds.some(function(r){return r.id===w.rid})});
     if(other.length)h+='<h3 class="wh">Other draws</h3><ul class="winners">'+other.map(wli).join('')+'</ul>';
@@ -866,7 +794,7 @@ textarea{resize:vertical}
     if(!activeRound()){var nx=rounds.filter(function(r){return drawnOf(r)<r.total})[0];activeId=nx?nx.id:null}
     if(!rounds.length){$('rounds').innerHTML='<div class="empty">No rounds yet. Add the first one above.</div>';return}
     $('rounds').innerHTML='<table><thead><tr><th>Set</th><th>Agencies</th><th>Draws</th><th></th></tr></thead><tbody>'+
-      rounds.map(function(r){var d=drawnOf(r);return '<tr><td>'+esc(r.set)+'</td><td style="white-space:normal;min-width:140px">'+esc(rlabel(r))+'</td><td>'+d+' of '+r.total+'</td><td>'+
+      rounds.map(function(r){var d=drawnOf(r);return '<tr><td>'+esc(r.set)+'</td><td style="white-space:normal;min-width:140px">'+esc(rlabel(r))+(r.prize?'<br>Prize: '+esc(r.prize):'')+'</td><td>'+d+' of '+r.total+'</td><td>'+
         (r.id===activeId?'<span class="tag on">Active</span>':'<button class="btn alt small" data-sel="'+r.id+'">Select</button>')+
         (d===0?' <button class="btn alt small" data-del="'+r.id+'">Remove</button>':'')+'</td></tr>'}).join('')+'</tbody></table>';
   }
@@ -877,11 +805,11 @@ textarea{resize:vertical}
     function rm(t,c){var m=$('rmsg');m.textContent=t;m.className='msg '+(c||'')}
     if(!(n>=1)){rm('Enter how many draws this round has.','err');return}
     if(!all&&!ag.length){rm('Choose at least one agency, or tick All agencies.','err');return}
-    var r={id:'r'+Date.now(),set:set,ag:ag,all:all,total:n}, a=activeRound();
+    var r={id:'r'+Date.now(),set:set,ag:ag,all:all,total:n,prize:$('rprize').value.trim()}, a=activeRound();
     rounds.push(r);
     if(!a||drawnOf(a)>=a.total){activeId=r.id;resetStage()}
     Array.prototype.forEach.call($('agChecks').querySelectorAll('input'),function(i){i.checked=false});
-    $('allAg').checked=false;$('rcount').value='';
+    $('allAg').checked=false;$('rcount').value='';$('rprize').value='';
     save();render();
     rm('Round added: '+set+' · '+rlabel(r)+' · '+n+(n===1?' draw.':' draws.'),'ok');
   };
@@ -900,7 +828,7 @@ textarea{resize:vertical}
       return;
     }
     var d=drawnOf(r), n=poolFor(r).length, done=d>=r.total;
-    $('rinfo').textContent=r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn';
+    $('rinfo').textContent=r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
     $('go').disabled=done||n===0;
     $('go').textContent=done?'Round complete':'Draw winner '+(d+1)+' of '+r.total;
     if(!won)$('dmeta').textContent=done?'This round is complete. Select or add another round.':n===0?'No eligible employees left for these agencies.':n+' eligible '+(n===1?'entry':'entries')+' in this round.';
@@ -944,230 +872,106 @@ textarea{resize:vertical}
     }
   };
 
-  // --- Web Audio Drum Roll & Celebration Sound Synthesizer ---
-  var audioCtx = null;
-  var isSoundMuted = false;
-
+  // --- Drum Roll & Fanfare Synthesizer (Web Audio) ---
+  var audioCtx = null, isSoundMuted = false, noiseBuffer = null;
   function getAudioContext() {
     if (!audioCtx) {
-      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) audioCtx = new AudioContextClass();
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
-
-  var noiseBuffer = null;
-  function getNoiseBuffer(ctx) {
+  function getNoise(ctx) {
     if (noiseBuffer) return noiseBuffer;
-    var bufferSize = ctx.sampleRate * 2;
-    noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    var output = noiseBuffer.getChannelData(0);
-    for (var i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
-    }
+    var sz = ctx.sampleRate * 2;
+    noiseBuffer = ctx.createBuffer(1, sz, ctx.sampleRate);
+    var o = noiseBuffer.getChannelData(0);
+    for (var i = 0; i < sz; i++) o[i] = Math.random() * 2 - 1;
     return noiseBuffer;
   }
-
-  function playDrumHit(volume, pitch) {
+  function playHit(v, p) {
     if (isSoundMuted) return;
     var ctx = getAudioContext();
     if (!ctx) return;
-    var now = ctx.currentTime;
-    var v = volume || 0.4;
-    var p = pitch || 180;
-
-    // Drum body tone
-    var osc = ctx.createOscillator();
-    var oscGain = ctx.createGain();
+    var now = ctx.currentTime, vol = v || 0.4, pt = p || 180;
+    var osc = ctx.createOscillator(), og = ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(p, now);
+    osc.frequency.setValueAtTime(pt, now);
     osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
+    og.gain.setValueAtTime(vol * 0.7, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(og); og.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.09);
 
-    oscGain.gain.setValueAtTime(v * 0.7, now);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-    osc.connect(oscGain);
-    oscGain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.09);
-
-    // Snare rattle (filtered noise burst)
-    var noise = ctx.createBufferSource();
-    noise.buffer = getNoiseBuffer(ctx);
-    var filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 1900;
-    filter.Q.value = 1.3;
-
-    var noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(v, now);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-
-    noise.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    noise.start(now);
-    noise.stop(now + 0.08);
+    var n = ctx.createBufferSource();
+    n.buffer = getNoise(ctx);
+    var f = ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 1.3;
+    var ng = ctx.createGain();
+    ng.gain.setValueAtTime(vol, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+    n.connect(f); f.connect(ng); ng.connect(ctx.destination);
+    n.start(now); n.stop(now + 0.08);
   }
-
-  var drumRollTimer = null;
-  function startDrumRoll(durationMs) {
+  var rollTimer = null;
+  function startRoll(dur) {
     if (isSoundMuted) return;
-    var ctx = getAudioContext();
-    if (!ctx) return;
-
-    var startTime = Date.now();
-    var baseInterval = 55;
-    
-    function rollStep() {
-      var elapsed = Date.now() - startTime;
-      var progress = Math.min(elapsed / durationMs, 1);
-      var vol = 0.2 + (progress * 0.55);
-      var pitch = 175 + (Math.random() * 22);
-      playDrumHit(vol, pitch);
-
-      if (elapsed < durationMs - 100) {
-        var nextInterval = Math.max(32, baseInterval - (progress * 22));
-        drumRollTimer = setTimeout(rollStep, nextInterval);
-      }
+    var st = Date.now();
+    function step() {
+      var el = Date.now() - st, pr = Math.min(el / dur, 1);
+      playHit(0.2 + pr * 0.55, 175 + Math.random() * 22);
+      if (el < dur - 100) rollTimer = setTimeout(step, Math.max(32, 55 - pr * 22));
     }
-    rollStep();
+    step();
   }
-
-  function stopDrumRoll() {
-    if (drumRollTimer) {
-      clearTimeout(drumRollTimer);
-      drumRollTimer = null;
-    }
-  }
-
-  function playFanfareAndCymbal() {
+  function stopRoll() { if (rollTimer) { clearTimeout(rollTimer); rollTimer = null; } }
+  function playCelebration() {
     if (isSoundMuted) return;
     var ctx = getAudioContext();
     if (!ctx) return;
     var now = ctx.currentTime;
-
-    // 1. Shimmering Cymbal Crash
-    var noise = ctx.createBufferSource();
-    noise.buffer = getNoiseBuffer(ctx);
-    var filter = ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(5000, now);
-
-    var cymGain = ctx.createGain();
-    cymGain.gain.setValueAtTime(0.7, now);
-    cymGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
-
-    noise.connect(filter);
-    filter.connect(cymGain);
-    cymGain.connect(ctx.destination);
-    noise.start(now);
-    noise.stop(now + 2.3);
-
-    // 2. Punch Bass Kick
-    var kick = ctx.createOscillator();
-    var kickGain = ctx.createGain();
-    kick.type = 'sine';
-    kick.frequency.setValueAtTime(140, now);
-    kick.frequency.exponentialRampToValueAtTime(45, now + 0.35);
-
-    kickGain.gain.setValueAtTime(0.85, now);
-    kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-    kick.connect(kickGain);
-    kickGain.connect(ctx.destination);
-    kick.start(now);
-    kick.stop(now + 0.36);
-
-    // 3. Grand Celebration Fanfare Chords (C5 - E5 - G5 - C6)
-    var notes = [
-      { f: 523.25, delay: 0.05, dur: 0.5 },  // C5
-      { f: 659.25, delay: 0.18, dur: 0.5 },  // E5
-      { f: 783.99, delay: 0.32, dur: 0.6 },  // G5
-      { f: 1046.50, delay: 0.48, dur: 1.5 } // High C6 climax
-    ];
-
-    notes.forEach(function(n) {
-      var osc = ctx.createOscillator();
-      var g = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(n.f, now + n.delay);
-
-      g.gain.setValueAtTime(0.001, now + n.delay);
-      g.gain.linearRampToValueAtTime(0.45, now + n.delay + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + n.delay + n.dur);
-
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(now + n.delay);
-      osc.stop(now + n.delay + n.dur + 0.1);
+    // Cymbal
+    var n = ctx.createBufferSource(); n.buffer = getNoise(ctx);
+    var f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.setValueAtTime(5000, now);
+    var cg = ctx.createGain(); cg.gain.setValueAtTime(0.75, now); cg.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+    n.connect(f); f.connect(cg); cg.connect(ctx.destination); n.start(now); n.stop(now + 2.3);
+    // Kick
+    var k = ctx.createOscillator(), kg = ctx.createGain();
+    k.type = 'sine'; k.frequency.setValueAtTime(140, now); k.frequency.exponentialRampToValueAtTime(45, now + 0.35);
+    kg.gain.setValueAtTime(0.85, now); kg.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    k.connect(kg); kg.connect(ctx.destination); k.start(now); k.stop(now + 0.36);
+    // Chords
+    [{f:523.25,d:0.05,t:0.5},{f:659.25,d:0.18,t:0.5},{f:783.99,d:0.32,t:0.6},{f:1046.5,d:0.48,t:1.5}].forEach(function(x){
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.setValueAtTime(x.f, now + x.d);
+      g.gain.setValueAtTime(0.001, now + x.d); g.gain.linearRampToValueAtTime(0.45, now + x.d + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + x.d + x.t);
+      o.connect(g); g.connect(ctx.destination); o.start(now + x.d); o.stop(now + x.d + x.t + 0.1);
     });
   }
 
-  // --- Festive Confetti Burst ---
+  // Confetti
   function launchConfetti() {
-    var canvas = $('confettiCanvas');
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.id = 'confettiCanvas';
-      canvas.style.position = 'fixed';
-      canvas.style.top = '0';
-      canvas.style.left = '0';
-      canvas.style.width = '100vw';
-      canvas.style.height = '100vh';
-      canvas.style.pointerEvents = 'none';
-      canvas.style.zIndex = '9999';
-      document.body.appendChild(canvas);
+    var c = $('confettiCv');
+    if (!c) {
+      c = document.createElement('canvas'); c.id = 'confettiCv';
+      c.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:9999';
+      document.body.appendChild(c);
     }
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    var ctx = canvas.getContext('2d');
-    var pieces = [];
-    var colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#fbbf24', '#ffffff'];
-    for (var i = 0; i < 90; i++) {
-      pieces.push({
-        x: canvas.width / 2 + (Math.random() * 260 - 130),
-        y: canvas.height * 0.42,
-        vx: (Math.random() - 0.5) * 16,
-        vy: -Math.random() * 15 - 5,
-        size: Math.random() * 9 + 5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * 360,
-        rSpeed: (Math.random() - 0.5) * 12,
-        alpha: 1
+    c.width = window.innerWidth; c.height = window.innerHeight;
+    var ctx = c.getContext('2d'), p = [], cols = ['#f59e0b','#ef4444','#10b981','#3b82f6','#ec4899','#fbbf24','#ffffff'];
+    for (var i = 0; i < 90; i++) p.push({x:c.width/2+(Math.random()*260-130),y:c.height*0.42,vx:(Math.random()-0.5)*16,vy:-Math.random()*15-5,sz:Math.random()*9+5,col:cols[Math.floor(Math.random()*cols.length)],rot:Math.random()*360,rs:(Math.random()-0.5)*12});
+    var st = Date.now();
+    (function anim(){
+      var el = Date.now() - st; ctx.clearRect(0,0,c.width,c.height);
+      p.forEach(function(k){
+        k.x += k.vx; k.y += k.vy; k.vy += 0.38; k.rot += k.rs;
+        ctx.save(); ctx.globalAlpha = Math.max(0, 1 - el/3200); ctx.translate(k.x,k.y); ctx.rotate(k.rot*Math.PI/180);
+        ctx.fillStyle = k.col; ctx.fillRect(-k.sz/2,-k.sz/2,k.sz,k.sz*0.6); ctx.restore();
       });
-    }
-
-    var startTime = Date.now();
-    function animate() {
-      var elapsed = Date.now() - startTime;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      pieces.forEach(function(p) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.38; // gravity
-        p.rotation += p.rSpeed;
-        p.alpha = Math.max(0, 1 - (elapsed / 3200));
-
-        ctx.save();
-        ctx.globalAlpha = p.alpha;
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation * Math.PI / 180);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-        ctx.restore();
-      });
-
-      if (elapsed < 3200) {
-        requestAnimationFrame(animate);
-      } else {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    }
-    requestAnimationFrame(animate);
+      if (el < 3200) requestAnimationFrame(anim); else ctx.clearRect(0,0,c.width,c.height);
+    })();
   }
 
   if ($('btnSoundToggle')) {
@@ -1179,50 +983,42 @@ textarea{resize:vertical}
   }
 
   $('go').onclick=function(){
+    var by=drawBy||'Admin';drawBy=null;
     var r=activeRound();if(!r||spinning||drawnOf(r)>=r.total)return;
     var p=poolFor(r);if(!p.length)return;
     var pick=p[Math.floor(Math.random()*p.length)];
-    spinning=true;$('go').disabled=true;$('stage').className='panel stage';
+    spinning=true;$('go').disabled=true;$('stage').className='panel stage';liveSet({phase:'drawing',info:$('rinfo').textContent});
     $('dmeta').textContent='Drawing…';
-
-    // Start authentic drum roll buildup! 🥁
-    startDrumRoll(3200);
-
+    startRoll(3200);
     var ticks=0,total=28;
     (function step(){
       if(ticks<total){
         $('dname').textContent=p[Math.floor(Math.random()*p.length)].name;
         ticks++;setTimeout(step,40+ticks*ticks*0.35);
       }else{
-        stopDrumRoll();
+        stopRoll();
         spinning=false;
         $('dname').textContent=pick.name;
         $('dmeta').textContent='Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
         $('stage').className='panel stage won';
-        winners.push(Object.assign({},pick,{rid:r.id,n:drawnOf(r)+1}));
-        save();
-        render();
-
-        // Celebratory fanfare & confetti burst! 🎉🎊
-        playFanfareAndCymbal();
+        var dn=drawnOf(r)+1;
+        winners.push(Object.assign({},pick,{rid:r.id,n:dn}));
+        log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
+        save();render();
+        liveSet({phase:'won',name:pick.name,meta:$('dmeta').textContent,info:$('rinfo').textContent});
+        playCelebration();
         launchConfetti();
       }
     })();
   };
 
-  if ($('btnSyncNow')) {
-    $('btnSyncNow').onclick = function() {
-      pullCloudData();
-      pushCloudData();
-    };
-  }
-
-  // Periodic pull from cloud every 10 seconds
-  setInterval(pullCloudData, 10000);
-  pullCloudData();
-
   render();
-  tab('reg');
+  seedIds().then(function(){
+    var pres=location.hash==='#summary';
+    document.body.classList.toggle('pres',pres);
+    tab(pres?'sum':'reg');
+  });
+  connect();
 })();
 </script>
 </body>
