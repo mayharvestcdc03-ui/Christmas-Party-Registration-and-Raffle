@@ -72,12 +72,109 @@ textarea{resize:vertical}
 .wh{font:400 1.1rem "Young Serif",Georgia,serif;margin:18px 0 8px}
 .tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:var(--win);color:var(--ink)}
 .tag.on{background:var(--pine);color:var(--pine-ink)}
-.stage{text-align:center;padding:34px 16px}
-.stage .name{font:400 clamp(2rem,9vw,4rem)/1.1 "Young Serif",Georgia,serif;min-height:1.2em;color:var(--pine);word-break:break-word}
-.stage .meta{color:var(--muted);min-height:1.5em;margin:6px 0 22px}
-.stage.won .name{color:var(--berry)}
-.opts{display:flex;justify-content:center;gap:8px;align-items:center;margin-bottom:18px;color:var(--muted)}
+.stage{
+  text-align:center;
+  padding:44px 20px 28px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:420px;
+  position:relative;
+  background:radial-gradient(circle at center, var(--surface) 25%, var(--bg) 100%);
+  border-radius:18px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.06);
+}
+.stage .hint{
+  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.stage .name{
+  font: 700 clamp(2.8rem, 9.5vw, 5.8rem)/1.08 "Young Serif",Georgia,serif;
+  min-height: 1.25em;
+  color: var(--pine);
+  word-break: break-word;
+  margin: 12px 0;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.01em;
+}
+.stage.won .name{
+  color: var(--berry);
+  text-shadow: 0 4px 24px rgba(179,38,62,0.25);
+}
+.stage .meta{
+  color: var(--muted);
+  min-height: 1.5em;
+  margin: 2px 0 18px;
+  font-size: clamp(1rem, 2.2vw, 1.45rem);
+  font-weight: 600;
+}
+.stage.won .meta{
+  color: var(--ink);
+}
+.opts{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  align-items:center;
+  margin:0 0 20px;
+  color:var(--muted);
+  font-size:0.85rem;
+}
 .opts input{width:auto;margin:0}
+
+.stage-controls{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:auto;
+  padding-top:16px;
+  border-top:1px dashed var(--line);
+  width:100%;
+  max-width:480px;
+}
+.stage-controls .btn{
+  font-size:0.88rem;
+  padding:7px 16px;
+  border-radius:8px;
+}
+.stage-controls .btn.alt{
+  font-size:0.82rem;
+  padding:6px 12px;
+}
+
+/* Fullscreen Stage / Wall Projector Mode */
+.stage:fullscreen, .stage:-webkit-full-screen{
+  width:100vw;
+  height:100vh;
+  padding:40px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:radial-gradient(circle at center, var(--surface) 20%, var(--bg) 100%);
+}
+.stage:fullscreen .name, .stage:-webkit-full-screen .name{
+  font-size:clamp(4.5rem, 13vw, 8rem);
+  margin:20px 0;
+}
+.stage:fullscreen .meta, .stage:-webkit-full-screen .meta{
+  font-size:1.8rem;
+}
+.stage:fullscreen .stage-controls, .stage:-webkit-full-screen .stage-controls{
+  position:absolute;
+  bottom:24px;
+}
 .winners{list-style:none;padding:0;margin:0}
 .winners li{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;margin-bottom:8px;
   background:var(--win);border-left:5px solid var(--gold);border-radius:6px}
@@ -272,7 +369,7 @@ textarea{resize:vertical}
       <div class="name" id="dname">Ready to draw</div>
       <div class="meta" id="dmeta">Press the button to pick a winner.</div>
       <label class="opts"><input type="checkbox" id="noRepeat" checked> Exclude people who already won</label>
-      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">
+      <div class="stage-controls">
         <button class="btn" id="go">Draw a winner</button>
         <button class="btn alt" id="btnSoundToggle" type="button" title="Toggle drum roll & celebration sound">🔊 Sound ON</button>
         <button class="btn alt" id="btnWallFullscreen" type="button" title="Open Stage in Fullscreen for Wall / Projector">📺 Wall Projector Mode</button>
