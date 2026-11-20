@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Christmas Party Registration & Raffle</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Young+Serif&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -722,53 +723,84 @@ body.pres nav,body.pres .count>div{display:none}
     });
   }
 
-  // Cloud Sync via Server API (Render / Node.js)
+  // Supabase Cloud Sync Configuration
+  var SUPABASE_URL = 'https://svquyjpguhrmhzbgynsw.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_J6udCVSr_aA2_LYp5QcSGQ_hMFu_wMA';
+  var supabaseClient = null;
+  try {
+    if (window.supabase && window.supabase.createClient) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      console.log('[MHC] Supabase Raffle Cloud Sync active!');
+    }
+  } catch(e) {}
+
+  function applyRaffleData(d) {
+    if (!d) return;
+    var updated = false;
+    if (Array.isArray(d.employees) && JSON.stringify(d.employees) !== JSON.stringify(employees)) { employees = d.employees; updated = true; }
+    if (Array.isArray(d.winners) && JSON.stringify(d.winners) !== JSON.stringify(winners)) { winners = d.winners; updated = true; }
+    if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) { allowed = d.allowed; updated = true; }
+    if (Array.isArray(d.pending) && JSON.stringify(d.pending) !== JSON.stringify(pending)) { pending = d.pending; updated = true; }
+    if (Array.isArray(d.rounds) && JSON.stringify(d.rounds) !== JSON.stringify(rounds)) { rounds = d.rounds; updated = true; }
+    if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
+    if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
+    if (d.live && typeof d.live === 'object') {
+      if (!live || d.live.ts !== live.ts) {
+        live = d.live;
+        renderLive();
+      }
+    }
+    if (updated) {
+      save();
+      render();
+    }
+  }
+
+  // Cloud Sync via Server API & Supabase
   function pushServerData() {
+    var payload = {
+      employees: employees,
+      winners: winners,
+      allowed: allowed,
+      pending: pending,
+      ids: ids,
+      rounds: rounds,
+      log: log,
+      evInfo: evInfo,
+      live: live,
+      updated: Date.now()
+    };
+
+    if (supabaseClient) {
+      try {
+        supabaseClient.from('party_sync').upsert({
+          room: 'raffle',
+          data: payload,
+          updated_at: new Date().toISOString()
+        }).then(function(res){
+          if (!res.error) $('syncst').textContent = 'Cloud Live';
+        }).catch(function(){});
+      } catch(e) {}
+    }
+
     try {
       fetch('/api/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employees: employees,
-          winners: winners,
-          allowed: allowed,
-          pending: pending,
-          ids: ids,
-          rounds: rounds,
-          log: log,
-          evInfo: evInfo,
-          live: live
-        })
+        body: JSON.stringify(payload)
       }).then(function(res){
         if (res.ok) $('syncst').textContent = 'Cloud Live';
       }).catch(function(){});
     } catch(e){}
   }
 
-  function pullServerData() {
+  function fallbackPullServer() {
     try {
       fetch('/api/data', { cache: 'no-store' })
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(d){
           if (!d) return;
-          var updated = false;
-          if (Array.isArray(d.employees) && JSON.stringify(d.employees) !== JSON.stringify(employees)) { employees = d.employees; updated = true; }
-          if (Array.isArray(d.winners) && JSON.stringify(d.winners) !== JSON.stringify(winners)) { winners = d.winners; updated = true; }
-          if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) { allowed = d.allowed; updated = true; }
-          if (Array.isArray(d.pending) && JSON.stringify(d.pending) !== JSON.stringify(pending)) { pending = d.pending; updated = true; }
-          if (Array.isArray(d.rounds) && JSON.stringify(d.rounds) !== JSON.stringify(rounds)) { rounds = d.rounds; updated = true; }
-          if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
-          if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
-          if (d.live && typeof d.live === 'object') {
-            if (!live || d.live.ts !== live.ts) {
-              live = d.live;
-              renderLive();
-            }
-          }
-          if (updated) {
-            save();
-            render();
-          }
+          applyRaffleData(d);
           $('syncst').textContent = 'Cloud Live';
         }).catch(function(){
           $('syncst').textContent = 'Local Mode';
@@ -776,7 +808,44 @@ body.pres nav,body.pres .count>div{display:none}
     } catch(e){}
   }
 
-  setInterval(pullServerData, 6000);
+  function pullServerData() {
+    if (supabaseClient) {
+      try {
+        supabaseClient
+          .from('party_sync')
+          .select('data')
+          .eq('room', 'raffle')
+          .single()
+          .then(function(res){
+            if (!res.error && res.data && res.data.data) {
+              applyRaffleData(res.data.data);
+              $('syncst').textContent = 'Cloud Live';
+              return;
+            }
+            fallbackPullServer();
+          }).catch(fallbackPullServer);
+        return;
+      } catch(e) {}
+    }
+    fallbackPullServer();
+  }
+
+  // Realtime Supabase Subscription
+  if (supabaseClient) {
+    try {
+      supabaseClient
+        .channel('realtime_raffle')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'party_sync', filter: 'room=eq.raffle' }, function(payload) {
+          if (payload.new && payload.new.data) {
+            applyRaffleData(payload.new.data);
+            $('syncst').textContent = 'Cloud Live';
+          }
+        })
+        .subscribe();
+    } catch(e) {}
+  }
+
+  setInterval(pullServerData, 4000);
   setInterval(function() {
     if (current === 'wall' || current === 'pick') {
       pullServerData();
