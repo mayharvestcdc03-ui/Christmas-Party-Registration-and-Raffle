@@ -117,9 +117,13 @@ function mergeRaffleData(serverState, incoming) {
     result.ids = { ...serverState.ids, ...incoming.ids };
   }
 
-  // 7. Live Real-Time Draw Event
-  if (incoming.live !== undefined) {
-    result.live = incoming.live;
+  // 7. Live Real-Time Draw Event (prevent stale/older timestamp overwrite)
+  if (incoming.live !== undefined && incoming.live !== null) {
+    const curLiveTs = (serverState.live && serverState.live.ts) ? Number(serverState.live.ts) : 0;
+    const inLiveTs = incoming.live.ts ? Number(incoming.live.ts) : 0;
+    if (!serverState.live || inLiveTs >= curLiveTs) {
+      result.live = incoming.live;
+    }
   }
 
   // 8. Draw Log
@@ -130,6 +134,11 @@ function mergeRaffleData(serverState, incoming) {
   // 9. Event Info
   if (incoming.evInfo && typeof incoming.evInfo === 'object') {
     result.evInfo = incoming.evInfo;
+  }
+
+  // 10. Active Round ID
+  if (incoming.activeId !== undefined) {
+    result.activeId = incoming.activeId;
   }
 
   result.lastUpdated = new Date().toISOString();

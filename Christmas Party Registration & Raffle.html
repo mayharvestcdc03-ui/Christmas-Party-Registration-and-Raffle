@@ -854,8 +854,15 @@ body.pres nav,body.pres .count>div{display:none}
     if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
     if (d.ids && typeof d.ids === 'object' && JSON.stringify(d.ids) !== JSON.stringify(ids)) { ids = d.ids; updated = true; }
     if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
+    if (d.activeId && d.activeId !== activeId) {
+      activeId = d.activeId;
+      updated = true;
+    }
     if (d.live && typeof d.live === 'object') {
-      if (!live || d.live.ts !== live.ts) {
+      var inTs = Number(d.live.ts) || 0;
+      var curTs = (live && live.ts) ? Number(live.ts) : 0;
+      // Do not accept older/stale live state and do not interrupt local spinning
+      if (!live || (inTs > curTs && !spinning)) {
         live = d.live;
         renderLive();
       }
@@ -892,6 +899,7 @@ body.pres nav,body.pres .count>div{display:none}
       log: log,
       evInfo: evInfo,
       live: live,
+      activeId: activeId,
       updated: Date.now()
     };
 
@@ -1017,12 +1025,26 @@ body.pres nav,body.pres .count>div{display:none}
     if(dbh){var j=JSON.stringify(o);seen.live=j;dbh.doc('sync/live').set({v:j,t:o.ts}).catch(function(){})}
   }
   var shuf=null, lastWonCelebrated=null;
+  function setStageNames(name, meta) {
+    if ($('dname')) $('dname').textContent = name;
+    if ($('pname')) $('pname').textContent = name;
+    if ($('wname')) $('wname').textContent = name;
+    if (meta !== undefined) {
+      if ($('dmeta')) $('dmeta').textContent = meta;
+      if ($('pmeta')) $('pmeta').textContent = meta;
+      if ($('wmeta')) $('wmeta').textContent = meta;
+    }
+  }
+
   function renderLive(){
-    if ($('pinfo')) $('pinfo').textContent=$('rinfo').textContent;
-    var d=live||{}, on=d.phase==='drawing'&&Date.now()-d.ts<20000;
-    if ($('winfo')) $('winfo').textContent=d.info||$('rinfo').textContent;
-    if ($('pgo')) $('pgo').disabled=$('go').disabled||on;
-    if ($('wgo')) $('wgo').disabled=$('go').disabled||on;
+    var r = activeRound();
+    var rText = r ? (r.set + ' · ' + rlabel(r) + ' · ' + drawnOf(r) + ' of ' + r.total + ' drawn' + (r.prize ? ' · Prize: ' + r.prize : '')) : 'All rounds complete';
+    if ($('pinfo')) $('pinfo').textContent = rText;
+    if ($('winfo')) $('winfo').textContent = rText;
+
+    var d = live || {}, on = d.phase === 'drawing' && (Date.now() - (d.ts || 0) < 5000);
+    if ($('pgo')) $('pgo').disabled = $('go').disabled || on || spinning;
+    if ($('wgo')) $('wgo').disabled = $('go').disabled || on || spinning;
 
     var wbox = $('wbox');
     var wstatus = $('wstatus');
@@ -1033,38 +1055,39 @@ body.pres nav,body.pres .count>div{display:none}
         wstatus.textContent = '🔴 LIVE DRAW IN PROGRESS';
         wstatus.style.background = 'var(--berry)';
       }
-      if(!shuf) {
-        startRoll(20000);
-        shuf=setInterval(function(){
-          if(!live||Date.now()-live.ts>20000){renderLive();return}
-          var e=employees[Math.floor(Math.random()*employees.length)];
-          if(e) {
-            if ($('wname')) $('wname').textContent=e.name;
-            if ($('pname')) $('pname').textContent=e.name;
+      // Only start spectator shuffle if NOT the device spinning locally
+      if (!spinning && !shuf) {
+        startRoll(4000);
+        shuf = setInterval(function(){
+          if (!live || live.phase !== 'drawing' || (Date.now() - (live.ts || 0) > 4500)) {
+            if (shuf) { clearInterval(shuf); shuf = null; }
+            stopRoll();
+            renderLive();
+            return;
           }
-        },65);
+          var e = employees[Math.floor(Math.random() * employees.length)];
+          if (e) {
+            setStageNames(e.name, 'Randomizing entries…');
+          }
+        }, 65);
       }
-      if ($('wmeta')) $('wmeta').textContent='Randomizing all qualified entries across agencies...';
-      if ($('pmeta')) $('pmeta').textContent='Drawing…';
-    }else{
-      if(shuf){
+      if ($('wmeta')) $('wmeta').textContent = 'Randomizing all qualified entries across agencies...';
+      if ($('pmeta')) $('pmeta').textContent = 'Drawing…';
+    } else {
+      if (shuf) {
         clearInterval(shuf);
-        shuf=null;
+        shuf = null;
         stopRoll();
       }
-      var won=d.phase==='won';
+      var won = d.phase === 'won' && d.name;
       if (won) {
         if (wbox) wbox.className = 'panel stage won';
         if (wstatus) {
           wstatus.textContent = '🏆 WINNER DRAWN!';
           wstatus.style.background = 'var(--gold)';
         }
-        if ($('wname')) $('wname').textContent=d.name;
-        if ($('pname')) $('pname').textContent=d.name;
-        if ($('wmeta')) $('wmeta').textContent=d.meta;
-        if ($('pmeta')) $('pmeta').textContent=d.meta;
+        setStageNames(d.name, d.meta || 'Winner drawn!');
 
-        // Trigger celebratory sound & confetti on newly drawn winner
         if (d.name && d.name !== lastWonCelebrated) {
           lastWonCelebrated = d.name;
           playCelebration();
@@ -1076,10 +1099,12 @@ body.pres nav,body.pres .count>div{display:none}
           wstatus.textContent = '✨ STAGE READY';
           wstatus.style.background = 'var(--pine)';
         }
-        if ($('wname')) $('wname').textContent='Ready to Draw';
-        if ($('pname')) $('pname').textContent='Ready';
-        if ($('wmeta')) $('wmeta').textContent='Winners will appear here live on screen';
-        if ($('pmeta')) $('pmeta').textContent='';
+        if (!spinning) {
+          if ($('wname')) $('wname').textContent = 'Ready to Draw';
+          if ($('pname')) $('pname').textContent = 'Ready';
+          if ($('wmeta')) $('wmeta').textContent = 'Winners will appear here live on screen';
+          if ($('pmeta')) $('pmeta').textContent = '';
+        }
       }
     }
   }
@@ -1130,6 +1155,9 @@ body.pres nav,body.pres .count>div{display:none}
   $('pgo').onclick=function(){
     var n=$('pickName').value.trim(), m=$('pmsg');
     if(!n){m.textContent='Enter your name first. It is recorded in the draw log.';m.className='msg err';return}
+    var r = activeRound();
+    if(!r){m.textContent='No active rounds available.';m.className='msg err';return}
+    if(drawnOf(r)>=r.total){m.textContent='All draws in this round are complete.';m.className='msg ok';return}
     m.textContent='';drawBy='Picker: '+n;$('go').click();
   };
   $('wfs').onclick=function(){var el=$('wbox');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
@@ -1163,7 +1191,16 @@ body.pres nav,body.pres .count>div{display:none}
 
   function rlabel(r){return r.all?'All agencies':r.ag.join(' + ')}
   function drawnOf(r){return winners.filter(function(w){return w.rid===r.id}).length}
-  function activeRound(){return rounds.filter(function(r){return r.id===activeId})[0]||null}
+  function activeRound(){
+    var r = rounds.filter(function(r){ return r.id === activeId; })[0];
+    if (r && drawnOf(r) < r.total) return r;
+    var nx = rounds.filter(function(r){ return drawnOf(r) < r.total; })[0];
+    if (nx) {
+      activeId = nx.id;
+      return nx;
+    }
+    return r || null;
+  }
   function resetStage(){$('dname').textContent='Ready to draw';$('stage').className='panel stage'}
   function poolFor(r){
     var won={};
@@ -1233,14 +1270,19 @@ body.pres nav,body.pres .count>div{display:none}
     if(!r){
       $('rinfo').textContent='Add a round above to start drawing.';
       $('go').disabled=true;$('go').textContent='Draw a winner';
+      if($('pgo')){ $('pgo').disabled=true; $('pgo').textContent='DRAW'; }
       if(!won)$('dmeta').textContent='No round selected.';
       return;
     }
     var d=drawnOf(r), n=poolFor(r).length, done=d>=r.total;
     $('rinfo').textContent=r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
     $('go').disabled=done||n===0;
-    $('go').textContent=done?'Round complete':'Draw winner '+(d+1)+' of '+r.total;
-    if(!won)$('dmeta').textContent=done?'This round is complete. Select or add another round.':n===0?'No eligible employees left for these agencies.':n+' eligible '+(n===1?'entry':'entries')+' in this round.';
+    $('go').textContent=done?'All draws in round complete':'Draw winner '+(d+1)+' of '+r.total;
+    if($('pgo')){
+      $('pgo').disabled=done||n===0;
+      $('pgo').textContent=done?'ROUND COMPLETE':'DRAW';
+    }
+    if(!won)$('dmeta').textContent=done?'This round is complete. Next round ready.':n===0?'No eligible employees left for these agencies.':n+' eligible '+(n===1?'entry':'entries')+' in this round.';
   }
 
   $('add').onclick=function(){
@@ -1393,28 +1435,54 @@ body.pres nav,body.pres .count>div{display:none}
 
   $('go').onclick=function(){
     var by=drawBy||'Admin';drawBy=null;
-    var r=activeRound();if(!r||spinning||drawnOf(r)>=r.total)return;
-    var p=poolFor(r);if(!p.length)return;
+    var r=activeRound();
+    if(!r||spinning||drawnOf(r)>=r.total)return;
+    var p=poolFor(r);
+    if(!p.length){
+      say('No eligible employees left in this round pool.','err');
+      return;
+    }
     var pick=p[Math.floor(Math.random()*p.length)];
-    spinning=true;$('go').disabled=true;$('stage').className='panel stage';liveSet({phase:'drawing',info:$('rinfo').textContent});
-    $('dmeta').textContent='Drawing…';
+    spinning=true;
+    if ($('go')) $('go').disabled=true;
+    if ($('pgo')) $('pgo').disabled=true;
+    if ($('wgo')) $('wgo').disabled=true;
+    $('stage').className='panel stage drawing';
+
+    var curInfo = r.set+' · '+rlabel(r)+' · Drawing Prize: '+(r.prize||'Raffle Prize');
+    liveSet({phase:'drawing', info: curInfo});
+    setStageNames('Drawing…', 'Randomizing all entries…');
     startRoll(3200);
-    var ticks=0,total=28;
+
+    var ticks=0, total=28;
     (function step(){
       if(ticks<total){
-        $('dname').textContent=p[Math.floor(Math.random()*p.length)].name;
-        ticks++;setTimeout(step,40+ticks*ticks*0.35);
+        var randEmp = p[Math.floor(Math.random()*p.length)];
+        setStageNames(randEmp.name, 'Drawing…');
+        ticks++;
+        setTimeout(step, 40+ticks*ticks*0.35);
       }else{
         stopRoll();
         spinning=false;
-        $('dname').textContent=pick.name;
-        $('dmeta').textContent='Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
+        var winMeta = 'Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
+        setStageNames(pick.name, winMeta);
         $('stage').className='panel stage won';
+
         var dn=drawnOf(r)+1;
         winners.push(Object.assign({},pick,{rid:r.id,n:dn}));
         log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
-        save();render();
-        liveSet({phase:'won',name:pick.name,meta:$('dmeta').textContent,info:$('rinfo').textContent});
+
+        // Auto advance activeId to next round if current round is complete
+        if (dn >= r.total) {
+          var nx = rounds.filter(function(rd){ return rd.id !== r.id && drawnOf(rd) < rd.total; })[0];
+          if (nx) activeId = nx.id;
+        }
+
+        save();
+        render();
+
+        var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
+        liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
         playCelebration();
         launchConfetti();
       }
