@@ -939,40 +939,54 @@ body.pres nav,body.pres .count>div{display:none}
     }
   }
 
-  function fallbackPullServer() {
+  var isPulling = false;
+  function pullFromSupabase() {
+    if (!supabaseClient) {
+      $('syncst').textContent = 'Local Mode';
+      return;
+    }
     try {
-      fetch(API_BASE + '/api/data', { cache: 'no-store' })
-        .then(function(r){ return r.ok ? r.json() : null; })
-        .then(function(d){
-          if (!d) return;
-          applyRaffleData(d, false);
-          $('syncst').textContent = 'Cloud Live';
+      supabaseClient
+        .from('party_sync')
+        .select('data')
+        .eq('room', 'raffle')
+        .single()
+        .then(function(res){
+          if (!res.error && res.data && res.data.data) {
+            applyRaffleData(res.data.data, false);
+            $('syncst').textContent = 'Cloud Live';
+          } else {
+            $('syncst').textContent = 'Local Mode';
+          }
         }).catch(function(){
           $('syncst').textContent = 'Local Mode';
         });
-    } catch(e){}
+    } catch(e){
+      $('syncst').textContent = 'Local Mode';
+    }
   }
 
   function pullServerData() {
-    // Primary pull from centralized Render cloud backend
-    fallbackPullServer();
+    if (isPulling) return;
+    isPulling = true;
 
-    // Redundant pull from Supabase
-    if (supabaseClient) {
-      try {
-        supabaseClient
-          .from('party_sync')
-          .select('data')
-          .eq('room', 'raffle')
-          .single()
-          .then(function(res){
-            if (!res.error && res.data && res.data.data) {
-              applyRaffleData(res.data.data, false);
-              $('syncst').textContent = 'Cloud Live';
-            }
-          }).catch(function(){});
-      } catch(e) {}
-    }
+    // Primary: Central Render Cloud Server (Single source of truth)
+    fetch(API_BASE + '/api/data', { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if (d) {
+          applyRaffleData(d, false);
+          $('syncst').textContent = 'Cloud Live';
+          return;
+        }
+        pullFromSupabase();
+      })
+      .catch(function(){
+        pullFromSupabase();
+      })
+      .finally(function(){
+        isPulling = false;
+      });
   }
 
   // Realtime Supabase Subscription
@@ -1043,8 +1057,9 @@ body.pres nav,body.pres .count>div{display:none}
     if ($('winfo')) $('winfo').textContent = rText;
 
     var d = live || {}, on = d.phase === 'drawing' && (Date.now() - (d.ts || 0) < 5000);
-    if ($('pgo')) $('pgo').disabled = $('go').disabled || on || spinning;
-    if ($('wgo')) $('wgo').disabled = $('go').disabled || on || spinning;
+    var isBtnDisabled = $('go').disabled || on || spinning;
+    if ($('pgo') && $('pgo').disabled !== isBtnDisabled) $('pgo').disabled = isBtnDisabled;
+    if ($('wgo') && $('wgo').disabled !== isBtnDisabled) $('wgo').disabled = isBtnDisabled;
 
     var wbox = $('wbox');
     var wstatus = $('wstatus');
@@ -1269,18 +1284,37 @@ body.pres nav,body.pres .count>div{display:none}
     var r=activeRound(), won=$('stage').className.indexOf('won')>=0;
     if(!r){
       $('rinfo').textContent='Add a round above to start drawing.';
-      $('go').disabled=true;$('go').textContent='Draw a winner';
-      if($('pgo')){ $('pgo').disabled=true; $('pgo').textContent='DRAW'; }
+      if ($('go').disabled !== true) $('go').disabled=true;
+      if ($('go').textContent !== 'Draw a winner') $('go').textContent='Draw a winner';
+      if($('pgo')){
+        if ($('pgo').disabled !== true) $('pgo').disabled=true;
+        if ($('pgo').textContent !== 'DRAW') $('pgo').textContent='DRAW';
+      }
+      if($('wgo')){
+        if ($('wgo').disabled !== true) $('wgo').disabled=true;
+        if ($('wgo').textContent !== 'Draw next winner') $('wgo').textContent='Draw next winner';
+      }
       if(!won)$('dmeta').textContent='No round selected.';
       return;
     }
     var d=drawnOf(r), n=poolFor(r).length, done=d>=r.total;
-    $('rinfo').textContent=r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
-    $('go').disabled=done||n===0;
-    $('go').textContent=done?'All draws in round complete':'Draw winner '+(d+1)+' of '+r.total;
+    var infoText = r.set+' · '+rlabel(r)+' · '+d+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
+    if ($('rinfo').textContent !== infoText) $('rinfo').textContent = infoText;
+
+    var isDis = done || n === 0;
+    if ($('go').disabled !== isDis) $('go').disabled = isDis;
+    var goText = done ? 'All draws in round complete' : (n === 0 ? 'No eligible entries' : 'Draw winner '+(d+1)+' of '+r.total);
+    if ($('go').textContent !== goText) $('go').textContent = goText;
+
     if($('pgo')){
-      $('pgo').disabled=done||n===0;
-      $('pgo').textContent=done?'ROUND COMPLETE':'DRAW';
+      if ($('pgo').disabled !== isDis) $('pgo').disabled = isDis;
+      var pText = done ? 'ROUND COMPLETE' : (n === 0 ? 'NO ENTRIES' : 'DRAW');
+      if ($('pgo').textContent !== pText) $('pgo').textContent = pText;
+    }
+    if($('wgo')){
+      if ($('wgo').disabled !== isDis) $('wgo').disabled = isDis;
+      var wText = done ? 'Round complete' : (n === 0 ? 'No eligible entries' : 'Draw winner '+(d+1)+' of '+r.total);
+      if ($('wgo').textContent !== wText) $('wgo').textContent = wText;
     }
     if(!won)$('dmeta').textContent=done?'This round is complete. Next round ready.':n===0?'No eligible employees left for these agencies.':n+' eligible '+(n===1?'entry':'entries')+' in this round.';
   }
