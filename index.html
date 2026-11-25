@@ -597,24 +597,58 @@ body.pres nav,body.pres .count>div{display:none}
     if(!pending.length)return '<div class="empty">'+(act?'Nothing to approve.':'No entries waiting for approval.')+'</div>';
     return '<table><thead><tr><th>Name</th><th>Employee number</th><th>Agency</th><th>Department</th>'+(act?'<th></th>':'<th>Status</th>')+'</tr></thead><tbody>'+
       pending.map(function(p,i){return '<tr><td>'+esc(p.name)+'</td><td>'+esc(p.id)+'</td><td>'+esc(p.dept)+'</td><td>'+esc(p.unit||'–')+'</td><td>'+
-        (act?'<button class="btn small" data-aq="'+i+'">Approve and qualify</button> <button class="btn alt small" data-ap="'+i+'">Approve entry only</button> <button class="btn alt small" data-rj="'+i+'">Reject</button>':'<span class="tag">Pending</span>')+'</td></tr>'}).join('')+'</tbody></table>';
+        (act?'<button class="btn small" type="button" data-aq="'+i+'">Approve and qualify</button> <button class="btn alt small" type="button" data-ap="'+i+'">Approve entry only</button> <button class="btn alt small" type="button" data-rj="'+i+'">Reject</button>':'<span class="tag">Pending</span>')+'</td></tr>'}).join('')+'</tbody></table>';
   }
   function renderPending(){
-    $('plist').innerHTML=ptable(true);$('plistHR').innerHTML=ptable(false);
+    var canAct = currentUser && (currentUser === 'accounting' || currentUser === 'admin' || currentUser === 'president');
+    $('plist').innerHTML=ptable(true);
+    if($('plistHR')) $('plistHR').innerHTML=ptable(canAct);
     $('ptitle').textContent='Manual entries to approve ('+pending.length+')';
   }
-  $('plist').onclick=function(e){
-    var t=e.target, a=t.getAttribute('data-ap'), q=t.getAttribute('data-aq'), r=t.getAttribute('data-rj');
-    if(a==null&&q==null&&r==null)return;
-    var i=+(a!=null?a:q!=null?q:r), p=pending[i];
-    if(!p)return;
-    if(r==null){
-      var rec={name:p.name,id:p.id,dept:p.dept,unit:p.unit||''};
-      if(!allowed.some(function(x){return norm(x.id)===norm(p.id)}))allowed.push(rec);
-      if(q!=null&&!employees.some(function(x){return norm(x.id)===norm(p.id)}))employees.push(Object.assign({at:Date.now()},rec));
+
+  function handleApprovalClick(e){
+    var btn = e.target && e.target.closest ? e.target.closest('button[data-aq], button[data-ap], button[data-rj]') : null;
+    if(!btn && e.target && (e.target.getAttribute('data-aq') != null || e.target.getAttribute('data-ap') != null || e.target.getAttribute('data-rj') != null)){
+      btn = e.target;
     }
-    pending.splice(i,1);save();render();
-  };
+    if(!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    var q = btn.getAttribute('data-aq');
+    var a = btn.getAttribute('data-ap');
+    var r = btn.getAttribute('data-rj');
+    if(q == null && a == null && r == null) return;
+
+    var i = +(q != null ? q : (a != null ? a : r));
+    var p = pending[i];
+    if(!p) return;
+
+    var empName = p.name || 'Employee';
+    if(r == null){
+      var rec = { name: p.name, id: p.id, dept: p.dept, unit: p.unit || '' };
+      if(!allowed.some(function(x){ return norm(x.id) === norm(p.id); })) {
+        allowed.push(rec);
+      }
+      if(q != null && !employees.some(function(x){ return norm(x.id) === norm(p.id); })) {
+        employees.push(Object.assign({ at: Date.now() }, rec));
+      }
+    }
+
+    pending.splice(i, 1);
+    save();
+    render();
+
+    var msg = (r != null)
+      ? (empName + ' was rejected.')
+      : (q != null
+          ? ('✅ ' + empName + ' was approved and qualified for the raffle!')
+          : ('✅ ' + empName + ' was approved. Employee can now confirm attendance.'));
+    say(msg, 'ok');
+  }
+
+  $('plist').onclick = handleApprovalClick;
+  if($('plistHR')) $('plistHR').onclick = handleApprovalClick;
 
   function find(){
     var id=$('eid').value.trim(), ag=$('dept').value.trim();
@@ -776,16 +810,39 @@ body.pres nav,body.pres .count>div{display:none}
       }
     }
 
-    if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) {
-      allowed = d.allowed;
-      updated = true;
+    // Smart merge allowed list
+    if (Array.isArray(d.allowed)) {
+      var allowMap = {};
+      allowed.forEach(function(a){ if (a && a.id) allowMap[norm(a.id)] = a; });
+      d.allowed.forEach(function(a){ if (a && a.id) allowMap[norm(a.id)] = a; });
+      var mergedAllow = Object.keys(allowMap).map(function(k){ return allowMap[k]; });
+      if (JSON.stringify(mergedAllow) !== JSON.stringify(allowed)) {
+        allowed = mergedAllow;
+        updated = true;
+      }
     }
 
-    // Smart merge pending manual registrations
+    // Smart merge pending manual registrations - filter out already approved/registered employees
     if (Array.isArray(d.pending)) {
+      var activePending = d.pending.filter(function(p){
+        if(!p || !p.id) return false;
+        var pId = norm(p.id);
+        var inAllowed = allowed.some(function(a){ return a && norm(a.id) === pId; });
+        var inEmployees = employees.some(function(e){ return e && norm(e.id) === pId; });
+        return !inAllowed && !inEmployees;
+      });
+
+      var filteredLocalPending = pending.filter(function(p){
+        if(!p || !p.id) return false;
+        var pId = norm(p.id);
+        var inAllowed = allowed.some(function(a){ return a && norm(a.id) === pId; });
+        var inEmployees = employees.some(function(e){ return e && norm(e.id) === pId; });
+        return !inAllowed && !inEmployees;
+      });
+
       var pendMap = {};
-      pending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
-      d.pending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
+      filteredLocalPending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
+      activePending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
       var mergedPend = Object.keys(pendMap).map(function(k){ return pendMap[k]; });
       if (JSON.stringify(mergedPend) !== JSON.stringify(pending)) {
         pending = mergedPend;

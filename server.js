@@ -89,12 +89,17 @@ function mergeRaffleData(serverState, incoming) {
 
   // 2. Allowed list
   if (Array.isArray(incoming.allowed)) {
-    result.allowed = incoming.allowed;
+    const allowMap = new Map();
+    serverState.allowed.forEach(a => { if (a && a.id) allowMap.set(String(a.id).trim().toLowerCase(), a); });
+    incoming.allowed.forEach(a => { if (a && a.id) allowMap.set(String(a.id).trim().toLowerCase(), a); });
+    result.allowed = Array.from(allowMap.values());
   }
 
   // 3. Pending manual entries
   if (Array.isArray(incoming.pending)) {
-    result.pending = incoming.pending;
+    const allowedIds = new Set(result.allowed.map(a => a && a.id ? String(a.id).trim().toLowerCase() : ''));
+    const empIds = new Set(result.employees.map(e => e && e.id ? String(e.id).trim().toLowerCase() : ''));
+    result.pending = incoming.pending.filter(p => p && p.id && !allowedIds.has(String(p.id).trim().toLowerCase()) && !empIds.has(String(p.id).trim().toLowerCase()));
   }
 
   // 4. Winners
