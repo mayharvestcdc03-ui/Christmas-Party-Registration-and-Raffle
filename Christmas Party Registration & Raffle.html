@@ -723,6 +723,20 @@ body.pres nav,body.pres .count>div{display:none}
     });
   }
 
+  // Universal Cloud Backend Endpoint (Render & Multi-Device Sync)
+  var API_BASE = (function() {
+    try {
+      var h = window.location.hostname;
+      if (h === 'localhost' || h === '127.0.0.1' || h === '') {
+        return '';
+      }
+      if (h.indexOf('onrender.com') !== -1) {
+        return '';
+      }
+    } catch(e) {}
+    return 'https://may-harvest-raffle-registration.onrender.com';
+  })();
+
   // Supabase Cloud Sync Configuration
   var SUPABASE_URL = 'https://svquyjpguhrmhzbgynsw.supabase.co';
   var SUPABASE_KEY = 'sb_publishable_J6udCVSr_aA2_LYp5QcSGQ_hMFu_wMA';
@@ -734,15 +748,54 @@ body.pres nav,body.pres .count>div{display:none}
     }
   } catch(e) {}
 
-  function applyRaffleData(d) {
+  function applyRaffleData(d, shouldPush) {
     if (!d) return;
     var updated = false;
-    if (Array.isArray(d.employees) && JSON.stringify(d.employees) !== JSON.stringify(employees)) { employees = d.employees; updated = true; }
-    if (Array.isArray(d.winners) && JSON.stringify(d.winners) !== JSON.stringify(winners)) { winners = d.winners; updated = true; }
-    if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) { allowed = d.allowed; updated = true; }
-    if (Array.isArray(d.pending) && JSON.stringify(d.pending) !== JSON.stringify(pending)) { pending = d.pending; updated = true; }
+
+    // Smart merge employees so attendees registered from any phone/device are preserved
+    if (Array.isArray(d.employees)) {
+      var empMap = {};
+      employees.forEach(function(e){ if (e && e.id) empMap[norm(e.id)] = e; });
+      d.employees.forEach(function(e){ if (e && e.id) empMap[norm(e.id)] = e; });
+      var mergedEmp = Object.keys(empMap).map(function(k){ return empMap[k]; });
+      if (JSON.stringify(mergedEmp) !== JSON.stringify(employees)) {
+        employees = mergedEmp;
+        updated = true;
+      }
+    }
+
+    // Smart merge winners
+    if (Array.isArray(d.winners)) {
+      var winMap = {};
+      winners.forEach(function(w){ if (w && w.id) winMap[norm(w.id)] = w; });
+      d.winners.forEach(function(w){ if (w && w.id) winMap[norm(w.id)] = w; });
+      var mergedWin = Object.keys(winMap).map(function(k){ return winMap[k]; });
+      if (JSON.stringify(mergedWin) !== JSON.stringify(winners)) {
+        winners = mergedWin;
+        updated = true;
+      }
+    }
+
+    if (Array.isArray(d.allowed) && JSON.stringify(d.allowed) !== JSON.stringify(allowed)) {
+      allowed = d.allowed;
+      updated = true;
+    }
+
+    // Smart merge pending manual registrations
+    if (Array.isArray(d.pending)) {
+      var pendMap = {};
+      pending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
+      d.pending.forEach(function(p){ if (p && p.id) pendMap[norm(p.id)] = p; });
+      var mergedPend = Object.keys(pendMap).map(function(k){ return pendMap[k]; });
+      if (JSON.stringify(mergedPend) !== JSON.stringify(pending)) {
+        pending = mergedPend;
+        updated = true;
+      }
+    }
+
     if (Array.isArray(d.rounds) && JSON.stringify(d.rounds) !== JSON.stringify(rounds)) { rounds = d.rounds; updated = true; }
     if (Array.isArray(d.log) && JSON.stringify(d.log) !== JSON.stringify(log)) { log = d.log; updated = true; }
+    if (d.ids && typeof d.ids === 'object' && JSON.stringify(d.ids) !== JSON.stringify(ids)) { ids = d.ids; updated = true; }
     if (d.evInfo && typeof d.evInfo === 'object') { evInfo = d.evInfo; updated = true; }
     if (d.live && typeof d.live === 'object') {
       if (!live || d.live.ts !== live.ts) {
@@ -750,8 +803,22 @@ body.pres nav,body.pres .count>div{display:none}
         renderLive();
       }
     }
+
     if (updated) {
-      save();
+      try {
+        localStorage.setItem(KEY_E, JSON.stringify(employees));
+        localStorage.setItem(KEY_W, JSON.stringify(winners));
+        localStorage.setItem(KEY_A, JSON.stringify(allowed));
+        localStorage.setItem(KEY_P, JSON.stringify(pending));
+        localStorage.setItem(KEY_I, JSON.stringify(ids));
+        localStorage.setItem(KEY_R, JSON.stringify(rounds));
+        localStorage.setItem(KEY_L, JSON.stringify(log));
+        localStorage.setItem(KEY_V, JSON.stringify(evInfo));
+      } catch(e){}
+
+      if (shouldPush) {
+        pushServerData();
+      }
       render();
     }
   }
@@ -771,36 +838,49 @@ body.pres nav,body.pres .count>div{display:none}
       updated: Date.now()
     };
 
+    // 1. Primary Central Cloud Server (Render)
+    try {
+      fetch(API_BASE + '/api/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function(res){
+        if (res.ok) {
+          $('syncst').textContent = 'Cloud Live';
+          return res.json();
+        }
+      }).then(function(result){
+        if (result && result.data) {
+          applyRaffleData(result.data, false);
+        }
+      }).catch(function(err){
+        console.warn('[MHC] Render sync notice:', err);
+      });
+    } catch(e){}
+
+    // 2. Secondary Cloud Database (Supabase)
     if (supabaseClient) {
       try {
         supabaseClient.from('party_sync').upsert({
           room: 'raffle',
           data: payload,
           updated_at: new Date().toISOString()
-        }).then(function(res){
+        }, { onConflict: 'room' }).then(function(res){
           if (!res.error) $('syncst').textContent = 'Cloud Live';
-        }).catch(function(){});
+        }).catch(function(err){
+          console.warn('[MHC] Supabase sync notice:', err);
+        });
       } catch(e) {}
     }
-
-    try {
-      fetch('/api/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function(res){
-        if (res.ok) $('syncst').textContent = 'Cloud Live';
-      }).catch(function(){});
-    } catch(e){}
   }
 
   function fallbackPullServer() {
     try {
-      fetch('/api/data', { cache: 'no-store' })
+      fetch(API_BASE + '/api/data', { cache: 'no-store' })
         .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(d){
           if (!d) return;
-          applyRaffleData(d);
+          applyRaffleData(d, false);
           $('syncst').textContent = 'Cloud Live';
         }).catch(function(){
           $('syncst').textContent = 'Local Mode';
@@ -809,6 +889,10 @@ body.pres nav,body.pres .count>div{display:none}
   }
 
   function pullServerData() {
+    // Primary pull from centralized Render cloud backend
+    fallbackPullServer();
+
+    // Redundant pull from Supabase
     if (supabaseClient) {
       try {
         supabaseClient
@@ -818,16 +902,12 @@ body.pres nav,body.pres .count>div{display:none}
           .single()
           .then(function(res){
             if (!res.error && res.data && res.data.data) {
-              applyRaffleData(res.data.data);
+              applyRaffleData(res.data.data, false);
               $('syncst').textContent = 'Cloud Live';
-              return;
             }
-            fallbackPullServer();
-          }).catch(fallbackPullServer);
-        return;
+          }).catch(function(){});
       } catch(e) {}
     }
-    fallbackPullServer();
   }
 
   // Realtime Supabase Subscription
@@ -837,7 +917,7 @@ body.pres nav,body.pres .count>div{display:none}
         .channel('realtime_raffle')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'party_sync', filter: 'room=eq.raffle' }, function(payload) {
           if (payload.new && payload.new.data) {
-            applyRaffleData(payload.new.data);
+            applyRaffleData(payload.new.data, false);
             $('syncst').textContent = 'Cloud Live';
           }
         })
