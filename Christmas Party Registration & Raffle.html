@@ -1083,9 +1083,9 @@ body.pres nav,body.pres .count>div{display:none}
       }
       // Only start spectator shuffle if NOT the device spinning locally
       if (!spinning && !shuf) {
-        startRoll(4000);
+        startRoll(4800);
         shuf = setInterval(function(){
-          if (!live || live.phase !== 'drawing' || (Date.now() - (live.ts || 0) > 4500)) {
+          if (!live || live.phase !== 'drawing' || (Date.now() - (live.ts || 0) > 5200)) {
             if (shuf) { clearInterval(shuf); shuf = null; }
             stopRoll();
             renderLive();
@@ -1095,7 +1095,7 @@ body.pres nav,body.pres .count>div{display:none}
           if (e) {
             setStageNames(e.name, 'Randomizing entries…');
           }
-        }, 65);
+        }, 90);
       }
       if ($('wmeta')) $('wmeta').textContent = 'Randomizing all qualified entries across agencies...';
       if ($('pmeta')) $('pmeta').textContent = 'Drawing…';
@@ -1103,8 +1103,8 @@ body.pres nav,body.pres .count>div{display:none}
       if (shuf) {
         clearInterval(shuf);
         shuf = null;
-        stopRoll();
       }
+      stopRoll();
       var won = d.phase === 'won' && d.name;
       if (won) {
         if (wbox) wbox.className = 'panel stage won';
@@ -1116,6 +1116,7 @@ body.pres nav,body.pres .count>div{display:none}
 
         if (d.name && d.name !== lastWonCelebrated) {
           lastWonCelebrated = d.name;
+          stopRoll();
           playCelebration();
           launchConfetti();
         }
@@ -1410,19 +1411,39 @@ body.pres nav,body.pres .count>div{display:none}
     n.connect(f); f.connect(ng); ng.connect(ctx.destination);
     n.start(now); n.stop(now + 0.08);
   }
-  var rollTimer = null;
+  var rollTimer = null, rollActive = false;
   function startRoll(dur) {
+    stopRoll();
     if (isSoundMuted) return;
-    var st = Date.now();
+    rollActive = true;
+    var st = Date.now(), d = dur || 4800;
     function step() {
-      var el = Date.now() - st, pr = Math.min(el / dur, 1);
-      playHit(0.2 + pr * 0.55, 175 + Math.random() * 22);
-      if (el < dur - 100) rollTimer = setTimeout(step, Math.max(32, 55 - pr * 22));
+      if (!rollActive) return;
+      var el = Date.now() - st;
+      if (el >= d) {
+        stopRoll();
+        return;
+      }
+      var pr = Math.min(el / d, 1);
+      playHit(0.18 + pr * 0.42, 160 + Math.random() * 24);
+      if (rollActive && el < d - 100) {
+        var delay = 60 + Math.pow(pr, 2.2) * 180;
+        rollTimer = setTimeout(step, delay);
+      } else {
+        stopRoll();
+      }
     }
     step();
   }
-  function stopRoll() { if (rollTimer) { clearTimeout(rollTimer); rollTimer = null; } }
+  function stopRoll() {
+    rollActive = false;
+    if (rollTimer) {
+      clearTimeout(rollTimer);
+      rollTimer = null;
+    }
+  }
   function playCelebration() {
+    stopRoll();
     if (isSoundMuted) return;
     var ctx = getAudioContext();
     if (!ctx) return;
@@ -1497,15 +1518,16 @@ body.pres nav,body.pres .count>div{display:none}
     var curInfo = r.set+' · '+rlabel(r)+' · Drawing Prize: '+(r.prize||'Raffle Prize');
     liveSet({phase:'drawing', info: curInfo});
     setStageNames('Drawing…', 'Randomizing all entries…');
-    startRoll(3200);
+    startRoll(4800);
 
-    var ticks=0, total=28;
+    var ticks=0, total=36;
     (function step(){
       if(ticks<total){
         var randEmp = p[Math.floor(Math.random()*p.length)];
         setStageNames(randEmp.name, 'Drawing…');
         ticks++;
-        setTimeout(step, 40+ticks*ticks*0.35);
+        var delay = 85 + Math.pow(ticks / total, 2.6) * 520;
+        setTimeout(step, delay);
       }else{
         stopRoll();
         spinning=false;
@@ -1530,6 +1552,7 @@ body.pres nav,body.pres .count>div{display:none}
         render();
 
         var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
+        lastWonCelebrated = pick.name;
         liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
         playCelebration();
         launchConfetti();
