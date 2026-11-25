@@ -786,19 +786,7 @@ body.pres nav,body.pres .count>div{display:none}
     if (!d) return;
     var updated = false;
 
-    // Smart merge employees so attendees registered from any phone/device are preserved
-    if (Array.isArray(d.employees)) {
-      var empMap = {};
-      employees.forEach(function(e){ if (e && e.id) empMap[norm(e.id)] = e; });
-      d.employees.forEach(function(e){ if (e && e.id) empMap[norm(e.id)] = e; });
-      var mergedEmp = Object.keys(empMap).map(function(k){ return empMap[k]; });
-      if (JSON.stringify(mergedEmp) !== JSON.stringify(employees)) {
-        employees = mergedEmp;
-        updated = true;
-      }
-    }
-
-    // Smart merge winners
+    // 1. Smart merge winners first
     if (Array.isArray(d.winners)) {
       var winMap = {};
       winners.forEach(function(w){ if (w && w.id) winMap[norm(w.id)] = w; });
@@ -806,6 +794,24 @@ body.pres nav,body.pres .count>div{display:none}
       var mergedWin = Object.keys(winMap).map(function(k){ return winMap[k]; });
       if (JSON.stringify(mergedWin) !== JSON.stringify(winners)) {
         winners = mergedWin;
+        updated = true;
+      }
+    }
+
+    // 2. Smart merge employees and immediately remove any winners from active list
+    if (Array.isArray(d.employees)) {
+      var wonIds = {};
+      winners.forEach(function(w){ if (w && w.id) wonIds[norm(w.id)] = 1; });
+      if (Array.isArray(d.winners)) {
+        d.winners.forEach(function(w){ if (w && w.id) wonIds[norm(w.id)] = 1; });
+      }
+
+      var empMap = {};
+      employees.forEach(function(e){ if (e && e.id && !wonIds[norm(e.id)]) empMap[norm(e.id)] = e; });
+      d.employees.forEach(function(e){ if (e && e.id && !wonIds[norm(e.id)]) empMap[norm(e.id)] = e; });
+      var mergedEmp = Object.keys(empMap).map(function(k){ return empMap[k]; });
+      if (JSON.stringify(mergedEmp) !== JSON.stringify(employees)) {
+        employees = mergedEmp;
         updated = true;
       }
     }
@@ -975,7 +981,12 @@ body.pres nav,body.pres .count>div{display:none}
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         if (d) {
-          applyRaffleData(d, false);
+          // Auto-heal: If server is fresh/empty after a deploy or restart, but client has local data, push local data to restore server!
+          if (Array.isArray(d.employees) && d.employees.length === 0 && (employees.length > 0 || winners.length > 0 || allowed.length > 0 || rounds.length > 0)) {
+            pushServerData();
+          } else {
+            applyRaffleData(d, false);
+          }
           $('syncst').textContent = 'Cloud Live';
           return;
         }
@@ -1505,6 +1516,9 @@ body.pres nav,body.pres .count>div{display:none}
         var dn=drawnOf(r)+1;
         winners.push(Object.assign({},pick,{rid:r.id,n:dn}));
         log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
+
+        // Immediately remove winner from registered employees pool
+        employees = employees.filter(function(e){ return norm(e.id) !== norm(pick.id); });
 
         // Auto advance activeId to next round if current round is complete
         if (dn >= r.total) {

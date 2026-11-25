@@ -107,6 +107,10 @@ function mergeRaffleData(serverState, incoming) {
     result.winners = incoming.winners;
   }
 
+  // Remove any winners from active registered employees pool
+  const wonIds = new Set(result.winners.map(w => w && w.id ? String(w.id).trim().toLowerCase() : ''));
+  result.employees = result.employees.filter(e => e && e.id && !wonIds.has(String(e.id).trim().toLowerCase()));
+
   // 5. Rounds
   if (Array.isArray(incoming.rounds)) {
     result.rounds = incoming.rounds;
