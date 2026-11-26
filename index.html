@@ -113,24 +113,213 @@ textarea{resize:vertical}
   color: var(--gold) !important;
 }
 
-/* Fullscreen Video Wall */
+/* Fullscreen Video Wall & Live Screen */
+.wall-stage {
+  min-height: 520px;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 22px 20px 18px !important;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.wall-top-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.wall-status-badge {
+  display: inline-block;
+  padding: 5px 18px;
+  border-radius: 99px;
+  background: var(--pine);
+  color: var(--pine-ink);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+.wall-top-bar .hint {
+  margin: 0 !important;
+  flex: 1;
+  text-align: center;
+}
+.wall-fs-btn {
+  font-size: 0.82rem !important;
+  padding: 5px 12px !important;
+  border-radius: 8px !important;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.wall-fs-btn:hover {
+  opacity: 1;
+}
+.wall-center-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  padding: 24px 10px;
+}
+.wall-winners-wrap {
+  width: 100%;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1.5px dashed var(--line);
+  box-sizing: border-box;
+}
+.wall-winners-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+.wall-winners-title {
+  font-weight: 800;
+  font-size: 0.96rem;
+  color: var(--pine);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wall-winners-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: var(--gold);
+  color: #fff;
+}
+.wall-winners-grid {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 6px 4px 10px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+.wall-winners-grid::-webkit-scrollbar {
+  height: 6px;
+}
+.wall-winners-grid::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+.wall-winner-card {
+  flex: 0 0 auto;
+  min-width: 210px;
+  max-width: 260px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-left: 5px solid var(--gold);
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.wall-winner-card.latest {
+  border-color: var(--berry);
+  border-left-color: var(--berry);
+  background: #fff8f8;
+  box-shadow: 0 4px 18px rgba(179,38,62,0.18);
+  animation: pulseCard 2s infinite ease-in-out;
+}
+@keyframes pulseCard {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.wall-winner-prize {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wall-winner-name {
+  font-family: "Young Serif", Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--pine);
+  line-height: 1.2;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wall-winner-card.latest .wall-winner-name {
+  color: var(--berry);
+}
+.wall-winner-dept {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wall-empty-hint {
+  font-size: 0.92rem;
+  color: var(--muted);
+  font-style: italic;
+  padding: 10px 4px;
+}
+
 #wbox:fullscreen, #wbox:-webkit-full-screen{
   width: 100vw !important;
   height: 100vh !important;
-  padding: 50px 30px !important;
+  padding: 26px 36px 20px !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: center !important;
+  justify-content: space-between !important;
   align-items: center !important;
   background: radial-gradient(circle at center, #fffdf8 0%, #ece4d2 100%) !important;
 }
 #wbox:fullscreen .wbig, #wbox:-webkit-full-screen .wbig{
-  font-size: clamp(5.8rem, 16vw, 11rem) !important;
-  margin: 24px 0 !important;
+  font-size: clamp(4.5rem, 11vw, 8rem) !important;
+  margin: 16px 0 !important;
 }
 #wbox:fullscreen .meta, #wbox:-webkit-full-screen .meta{
-  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem) !important;
+}
+#wbox:fullscreen .wall-winners-wrap {
+  max-width: 1400px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 12px 18px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+}
+#wbox:fullscreen .wall-winner-card {
+  min-width: 250px;
+  max-width: 300px;
+  padding: 12px 16px;
+}
+#wbox:fullscreen .wall-winner-name {
+  font-size: 1.35rem;
+}
+#wbox:fullscreen .wall-winner-dept {
+  font-size: 0.92rem;
+}
+#wbox:fullscreen .wall-winner-prize {
+  font-size: 0.85rem;
 }
 body.pres nav,body.pres .count>div{display:none}
 .tag{font-size:.8rem;padding:2px 8px;border-radius:99px;background:var(--win);color:var(--ink)}
@@ -195,14 +384,26 @@ body.pres nav,body.pres .count>div{display:none}
   </section>
 
   <section id="wall" hidden>
-    <div class="panel stage" id="wbox">
-      <div id="wstatus" style="display:inline-block;padding:4px 16px;border-radius:99px;background:var(--pine);color:var(--pine-ink);font-weight:700;font-size:0.95rem;margin-bottom:12px;letter-spacing:0.04em">✨ STAGE READY</div>
-      <p class="hint" id="winfo"></p>
-      <div class="name wbig" id="wname">Ready to Draw</div>
-      <div class="meta" id="wmeta">Winners will appear here live</div>
-      <div class="stage-controls">
-        <button class="btn" id="wgo">Draw next winner</button>
-        <button class="btn alt" id="wfs">Full screen</button>
+    <div class="panel stage wall-stage" id="wbox">
+      <div class="wall-top-bar">
+        <div id="wstatus" class="wall-status-badge">✨ STAGE READY</div>
+        <p class="hint" id="winfo"></p>
+        <button class="btn alt small wall-fs-btn" id="wfs" type="button" title="Toggle Fullscreen Projector Mode">⛶ Full Screen</button>
+      </div>
+
+      <div class="wall-center-stage">
+        <div class="name wbig" id="wname">Christmas Party Raffle</div>
+        <div class="meta" id="wmeta">Waiting for the Grand Raffle Draw... Good luck to all employees!</div>
+      </div>
+
+      <div class="wall-winners-wrap" id="wWinnersWrap">
+        <div class="wall-winners-hdr">
+          <span class="wall-winners-title">🎁 Recent Winners</span>
+          <span class="wall-winners-badge" id="wWinnersCount">0 Drawn</span>
+        </div>
+        <div id="wWinnersList" class="wall-winners-grid">
+          <div class="wall-empty-hint">No winners drawn yet. May the luckiest ones win! 🎄</div>
+        </div>
       </div>
     </div>
   </section>
@@ -1061,6 +1262,38 @@ body.pres nav,body.pres .count>div{display:none}
     }
   }
 
+  function renderWallWinners() {
+    var wrap = $('wWinnersList');
+    var countBadge = $('wWinnersCount');
+    if (!wrap) return;
+
+    if (!winners || !winners.length) {
+      wrap.innerHTML = '<div class="wall-empty-hint">No winners drawn yet. May the luckiest ones win! 🎄</div>';
+      if (countBadge) countBadge.textContent = '0 Drawn';
+      return;
+    }
+
+    if (countBadge) countBadge.textContent = winners.length + (winners.length === 1 ? ' Winner' : ' Winners');
+
+    var list = winners.slice().reverse();
+    var html = list.map(function(w, idx) {
+      var isLatest = (idx === 0);
+      var r = rounds.filter(function(rd){ return rd.id === w.rid; })[0];
+      var prizeLabel = (r && r.prize) ? r.prize : (w.prize || 'Raffle Prize');
+      var setLabel = (r && r.set) ? r.set : (w.set || '');
+      var roundBadge = [setLabel, prizeLabel].filter(Boolean).join(' · ');
+      var drawNo = w.n ? '#' + w.n : ('#' + (winners.length - idx));
+
+      return '<div class="wall-winner-card' + (isLatest ? ' latest' : '') + '">' +
+        '<div class="wall-winner-prize">' + (isLatest ? '⭐ LATEST · ' : '') + esc(drawNo) + (roundBadge ? ' · ' + esc(roundBadge) : '') + '</div>' +
+        '<div class="wall-winner-name" title="' + esc(w.name) + '">' + esc(w.name) + '</div>' +
+        '<div class="wall-winner-dept">' + esc(w.dept || '') + (w.unit ? ' · ' + esc(w.unit) : '') + (w.id ? ' (ID: ' + esc(w.id) + ')' : '') + '</div>' +
+      '</div>';
+    }).join('');
+
+    wrap.innerHTML = html;
+  }
+
   function renderLive(){
     var r = activeRound();
     var rText = r ? (r.set + ' · ' + rlabel(r) + ' · ' + drawnOf(r) + ' of ' + r.total + ' drawn' + (r.prize ? ' · Prize: ' + r.prize : '')) : 'All rounds complete';
@@ -1076,7 +1309,7 @@ body.pres nav,body.pres .count>div{display:none}
     var wstatus = $('wstatus');
 
     if(on){
-      if (wbox) wbox.className = 'panel stage drawing';
+      if (wbox) wbox.className = 'panel stage wall-stage drawing';
       if (wstatus) {
         wstatus.textContent = '🔴 LIVE DRAW IN PROGRESS';
         wstatus.style.background = 'var(--berry)';
@@ -1107,7 +1340,7 @@ body.pres nav,body.pres .count>div{display:none}
       stopRoll();
       var won = d.phase === 'won' && d.name;
       if (won) {
-        if (wbox) wbox.className = 'panel stage won';
+        if (wbox) wbox.className = 'panel stage wall-stage won';
         if (wstatus) {
           wstatus.textContent = '🏆 WINNER DRAWN!';
           wstatus.style.background = 'var(--gold)';
@@ -1121,19 +1354,40 @@ body.pres nav,body.pres .count>div{display:none}
           launchConfetti();
         }
       } else {
-        if (wbox) wbox.className = 'panel stage';
-        if (wstatus) {
-          wstatus.textContent = '✨ STAGE READY';
-          wstatus.style.background = 'var(--pine)';
+        // Idle state: If there are already winners, display the latest winner!
+        if (winners && winners.length > 0) {
+          var latestW = winners[winners.length - 1];
+          if (wbox) wbox.className = 'panel stage wall-stage won';
+          if (wstatus) {
+            wstatus.textContent = '🏆 LATEST WINNER';
+            wstatus.style.background = 'var(--gold)';
+          }
+          var rOfW = rounds.filter(function(rd){ return rd.id === latestW.rid; })[0];
+          var prizeOfW = (rOfW && rOfW.prize) ? rOfW.prize : (latestW.prize || '');
+          var latestMeta = 'Employee ID ' + latestW.id + (latestW.dept ? ' · ' + latestW.dept : '') + (latestW.unit ? ' · ' + latestW.unit : '') + (prizeOfW ? ' · Prize: ' + prizeOfW : '');
+          if ($('wname')) $('wname').textContent = latestW.name;
+          if ($('wmeta')) $('wmeta').textContent = latestMeta;
+        } else {
+          // No winners yet
+          if (wbox) wbox.className = 'panel stage wall-stage';
+          if (wstatus) {
+            wstatus.textContent = '🎄 GRAND CELEBRATION';
+            wstatus.style.background = 'var(--pine)';
+          }
+          if (!spinning) {
+            if ($('wname')) $('wname').textContent = (evInfo && evInfo.name) ? evInfo.name : 'Christmas Party Raffle';
+            if ($('wmeta')) $('wmeta').textContent = 'Waiting for the Grand Raffle Draw... Good luck to all employees!';
+          }
         }
+
         if (!spinning) {
-          if ($('wname')) $('wname').textContent = 'Ready to Draw';
           if ($('pname')) $('pname').textContent = 'Ready';
-          if ($('wmeta')) $('wmeta').textContent = 'Winners will appear here live on screen';
           if ($('pmeta')) $('pmeta').textContent = '';
         }
       }
     }
+
+    renderWallWinners();
   }
   function renderEvent(){
     var e=evInfo||{}, nm=e.name||'Christmas Party Raffle', dt='';
@@ -1536,7 +1790,7 @@ body.pres nav,body.pres .count>div{display:none}
         $('stage').className='panel stage won';
 
         var dn=drawnOf(r)+1;
-        winners.push(Object.assign({},pick,{rid:r.id,n:dn}));
+        winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||''}));
         log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
 
         // Immediately remove winner from registered employees pool
