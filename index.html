@@ -1707,37 +1707,53 @@ body.pres nav,body.pres .count>div{display:none}
       ctx.rotate(this.rotation);
       ctx.drawImage(this.cacheCanvas, -cx, -cy);
 
-      // 2. If a winner has been drawn and slice is lifting, draw the highlighted popped-out triangle!
+      // 2. If a winner has been drawn, draw the enlarged 3D elevated pizza slice!
       var W = this.winningIndex;
       var N = this.pool.length;
       if (W >= 0 && W < N && this.liftProgress > 0) {
-        var sliceAngle = (Math.PI * 2) / N;
-        var startAngle = W * sliceAngle;
-        var endAngle = startAngle + sliceAngle;
-        var midAngle = startAngle + sliceAngle / 2;
-        var liftDist = (22 * dpr) * this.liftProgress;
+        var lp = this.liftProgress;
+        var baseSliceAngle = (Math.PI * 2) / N;
+        var midAngle = (W + 0.5) * baseSliceAngle;
+
+        // Dramatically expand the pizza slice: both wider (angular) and longer (radial)
+        var angleMultiplier = 1 + (0.65 * lp);
+        var expandedAngle = Math.max(baseSliceAngle * angleMultiplier, baseSliceAngle + (0.22 * lp));
+        var sAngle = midAngle - (expandedAngle / 2);
+        var eAngle = midAngle + (expandedAngle / 2);
+        var sliceRadius = radius * (1 + (0.18 * lp)); // 18% longer radius
+
+        // Pull outward from center like a pizza slice being pulled from the pie
+        var liftDist = (38 * dpr) * lp;
         var ox = Math.cos(midAngle) * liftDist;
         var oy = Math.sin(midAngle) * liftDist;
 
         ctx.save();
         ctx.translate(ox, oy);
 
-        // Popped triangle sector
+        // Deep 3D elevation drop shadow under the lifted pizza slice
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.68)';
+        ctx.shadowBlur = 32 * dpr;
+        ctx.shadowOffsetX = 8 * dpr;
+        ctx.shadowOffsetY = 8 * dpr;
+
+        // Big Pizza Wedge Sector
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius * (1 + 0.04 * this.liftProgress), startAngle, endAngle);
+        ctx.arc(0, 0, sliceRadius, sAngle, eAngle);
         ctx.closePath();
         ctx.fillStyle = PALETTE[W % PALETTE.length];
-        ctx.shadowColor = 'rgba(255, 215, 0, 0.95)';
-        ctx.shadowBlur = 20 * dpr;
         ctx.fill();
 
-        // Shimmering gold outline on the lifted slice
+        // Shimmering thick golden crust border around the pizza slice
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.95)';
+        ctx.shadowBlur = 22 * dpr;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 4 * dpr;
+        ctx.lineWidth = 6 * dpr;
         ctx.stroke();
 
-        // High contrast text inside lifted slice
+        // High contrast enlarged text inside the giant lifted pizza slice
         var e = this.pool[W];
         var name = (e && e.name) ? e.name : (e || '');
         var empId = (e && e.id) ? '#' + e.id : '';
@@ -1751,18 +1767,18 @@ body.pres nav,body.pres .count>div{display:none}
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#ffffff';
 
-        var fontTitle = Math.max(10.5, Math.min(24, (radius * sliceAngle * 0.46) / dpr)) * dpr;
-        var fontSub = Math.max(8, Math.min(15, fontTitle * 0.72)) * dpr;
+        var fontTitle = Math.max(13 * dpr, Math.min(28 * dpr, sliceRadius * 0.082));
+        var fontSub = Math.max(9.5 * dpr, Math.min(18 * dpr, fontTitle * 0.72));
 
         ctx.font = '900 ' + Math.round(fontTitle) + 'px "Nunito", "DM Sans", sans-serif';
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur = 4 * dpr;
-        ctx.fillText(name, radius * 1.02 - (14 * dpr), -5 * dpr);
+        ctx.shadowColor = 'rgba(0,0,0,0.92)';
+        ctx.shadowBlur = 5 * dpr;
+        ctx.fillText(name, sliceRadius - (18 * dpr), -6 * dpr);
 
         if (details) {
           ctx.font = '800 ' + Math.round(fontSub) + 'px "Nunito", "DM Sans", sans-serif';
-          ctx.fillStyle = '#fef08a'; // Bright gold yellow text for details
-          ctx.fillText(details, radius * 1.02 - (14 * dpr), 7 * dpr);
+          ctx.fillStyle = '#fef08a'; // Bright gold yellow text for employee number & details
+          ctx.fillText(details, sliceRadius - (18 * dpr), 8 * dpr);
         }
         ctx.restore();
 
