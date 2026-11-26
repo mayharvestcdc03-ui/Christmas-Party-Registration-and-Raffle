@@ -86,11 +86,55 @@ textarea{resize:vertical}
 #wbox.won .wbig{
   color: var(--berry) !important;
   text-shadow: 0 6px 40px rgba(179,38,62,0.4) !important;
-  animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 #wbox.drawing .wbig{
   color: var(--gold) !important;
   text-shadow: 0 4px 22px rgba(201,151,43,0.3) !important;
+}
+
+/* Suspense Fade Out & Dramatic Winner Reveal */
+.draw-fading {
+  opacity: 0 !important;
+  transform: scale(0.92) !important;
+  filter: blur(8px) !important;
+  transition: opacity 0.42s cubic-bezier(0.4, 0, 0.2, 1), transform 0.42s cubic-bezier(0.4, 0, 0.2, 1), filter 0.42s ease !important;
+}
+
+.reveal-winner {
+  animation: revealWinner 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+@keyframes revealWinner {
+  0% {
+    opacity: 0;
+    transform: scale(0.65) translateY(14px);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) translateY(-4px);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.reveal-meta {
+  animation: revealMeta 0.6s ease-out 0.15s both !important;
+}
+
+@keyframes revealMeta {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 #wbox .meta{
   font-size: clamp(1.4rem, 3.4vw, 2.8rem) !important;
@@ -1262,6 +1306,39 @@ body.pres nav,body.pres .count>div{display:none}
     }
   }
 
+  function setStageFade(isFading) {
+    ['dname', 'pname', 'wname', 'dmeta', 'pmeta', 'wmeta'].forEach(function(id) {
+      var el = $(id);
+      if (el) {
+        if (isFading) {
+          el.classList.add('draw-fading');
+          el.classList.remove('reveal-winner', 'reveal-meta');
+        } else {
+          el.classList.remove('draw-fading');
+        }
+      }
+    });
+  }
+
+  function triggerWinnerReveal() {
+    ['dname', 'pname', 'wname'].forEach(function(id) {
+      var el = $(id);
+      if (el) {
+        el.classList.remove('draw-fading', 'reveal-winner');
+        void el.offsetWidth; // Force CSS reflow to re-trigger reveal animation
+        el.classList.add('reveal-winner');
+      }
+    });
+    ['dmeta', 'pmeta', 'wmeta'].forEach(function(id) {
+      var el = $(id);
+      if (el) {
+        el.classList.remove('draw-fading', 'reveal-meta');
+        void el.offsetWidth;
+        el.classList.add('reveal-meta');
+      }
+    });
+  }
+
   function renderWallWinners() {
     var wrap = $('wWinnersList');
     var countBadge = $('wWinnersCount');
@@ -1340,18 +1417,39 @@ body.pres nav,body.pres .count>div{display:none}
       stopRoll();
       var won = d.phase === 'won' && d.name;
       if (won) {
-        if (wbox) wbox.className = 'panel stage wall-stage won';
-        if (wstatus) {
-          wstatus.textContent = '🏆 WINNER DRAWN!';
-          wstatus.style.background = 'var(--gold)';
-        }
-        setStageNames(d.name, d.meta || 'Winner drawn!');
-
         if (d.name && d.name !== lastWonCelebrated) {
           lastWonCelebrated = d.name;
           stopRoll();
-          playCelebration();
-          launchConfetti();
+          if (shuf) { clearInterval(shuf); shuf = null; }
+
+          // Cinematic suspense fade-out of actual draw roll
+          setStageFade(true);
+          if (wstatus) {
+            wstatus.textContent = '✨ REVEALING WINNER...';
+            wstatus.style.background = 'var(--gold)';
+          }
+          if ($('wmeta')) $('wmeta').textContent = '✨ And the winner is... ✨';
+
+          setTimeout(function() {
+            setStageFade(false);
+            if (wbox) wbox.className = 'panel stage wall-stage won';
+            if (wstatus) {
+              wstatus.textContent = '🏆 WINNER DRAWN!';
+              wstatus.style.background = 'var(--gold)';
+            }
+            setStageNames(d.name, d.meta || 'Winner drawn!');
+            triggerWinnerReveal();
+            playCelebration();
+            launchConfetti();
+            renderWallWinners();
+          }, 450);
+        } else {
+          if (wbox) wbox.className = 'panel stage wall-stage won';
+          if (wstatus) {
+            wstatus.textContent = '🏆 WINNER DRAWN!';
+            wstatus.style.background = 'var(--gold)';
+          }
+          setStageNames(d.name, d.meta || 'Winner drawn!');
         }
       } else {
         // Idle state: If there are already winners, display the latest winner!
@@ -1783,33 +1881,55 @@ body.pres nav,body.pres .count>div{display:none}
         var delay = 85 + Math.pow(ticks / total, 2.6) * 520;
         setTimeout(step, delay);
       }else{
+        // 1. Draw roll finishes: smoothly fade out the shuffle into suspense
         stopRoll();
-        spinning=false;
-        var winMeta = 'Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'');
-        setStageNames(pick.name, winMeta);
-        $('stage').className='panel stage won';
-
-        var dn=drawnOf(r)+1;
-        winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||''}));
-        log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
-
-        // Immediately remove winner from registered employees pool
-        employees = employees.filter(function(e){ return norm(e.id) !== norm(pick.id); });
-
-        // Auto advance activeId to next round if current round is complete
-        if (dn >= r.total) {
-          var nx = rounds.filter(function(rd){ return rd.id !== r.id && drawnOf(rd) < rd.total; })[0];
-          if (nx) activeId = nx.id;
+        setStageFade(true);
+        if ($('dmeta')) $('dmeta').textContent = '✨ And the winner is... ✨';
+        if ($('pmeta')) $('pmeta').textContent = '✨ And the winner is... ✨';
+        if ($('wmeta')) $('wmeta').textContent = '✨ And the winner is... ✨';
+        var wstatus = $('wstatus');
+        if (wstatus) {
+          wstatus.textContent = '✨ REVEALING WINNER...';
+          wstatus.style.background = 'var(--gold)';
         }
 
-        save();
-        render();
+        // 2. After suspense breath (450ms), burst-reveal the official winner!
+        setTimeout(function(){
+          spinning=false;
+          setStageFade(false);
+          var winMeta = 'Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'')+(r.prize?' · Prize: '+r.prize:'');
+          setStageNames(pick.name, winMeta);
+          $('stage').className='panel stage won';
+          var wbox = $('wbox');
+          if (wbox) wbox.className='panel stage wall-stage won';
+          if (wstatus) {
+            wstatus.textContent = '🏆 WINNER DRAWN!';
+            wstatus.style.background = 'var(--gold)';
+          }
+          triggerWinnerReveal();
 
-        var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
-        lastWonCelebrated = pick.name;
-        liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
-        playCelebration();
-        launchConfetti();
+          var dn=drawnOf(r)+1;
+          winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||''}));
+          log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
+
+          // Immediately remove winner from registered employees pool
+          employees = employees.filter(function(e){ return norm(e.id) !== norm(pick.id); });
+
+          // Auto advance activeId to next round if current round is complete
+          if (dn >= r.total) {
+            var nx = rounds.filter(function(rd){ return rd.id !== r.id && drawnOf(rd) < rd.total; })[0];
+            if (nx) activeId = nx.id;
+          }
+
+          save();
+          render();
+
+          var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
+          lastWonCelebrated = pick.name;
+          liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
+          playCelebration();
+          launchConfetti();
+        }, 450);
       }
     })();
   };
