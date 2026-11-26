@@ -157,6 +157,57 @@ textarea{resize:vertical}
   color: var(--gold) !important;
 }
 
+/* Raffle Wheel Component Styling (Wheel of Names Fortune Style) */
+.wheel-stage {
+  padding: 24px 20px 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+.wheel-outer-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  margin: 12px auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.wheel-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 10px 38px rgba(0, 0, 0, 0.2), 0 3px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.wheel-canvas:hover {
+  transform: scale(1.02);
+}
+.wheel-pointer {
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 18px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-right: 32px solid #2563eb; /* pointer arrow pointing left into wheel */
+  filter: drop-shadow(-3px 2px 6px rgba(0, 0, 0, 0.38));
+  z-index: 12;
+  pointer-events: none;
+  transition: transform 0.05s ease;
+  transform-origin: 100% 50%;
+}
+.wheel-pointer.tick {
+  transform: translateY(-50%) rotate(-14deg);
+}
+
 /* Fullscreen Video Wall & Live Screen */
 .wall-stage {
   min-height: 520px;
@@ -416,13 +467,21 @@ body.pres nav,body.pres .count>div{display:none}
   </nav>
 
   <section id="pick" hidden>
-    <div class="panel stage">
+    <div class="panel stage wheel-stage">
       <p class="hint" id="pinfo"></p>
-      <label for="pickName" style="text-align:left">Your name (recorded in the draw log)</label>
-      <input id="pickName" autocomplete="off" placeholder="e.g. Juan Dela Cruz">
-      <div class="name" id="pname">Ready</div>
-      <div class="meta" id="pmeta"></div>
-      <button class="btn" id="pgo" style="font-size:1.5rem;padding:18px 44px">DRAW</button>
+      <div style="max-width:320px;margin:0 auto 6px;width:100%">
+        <label for="pickName" style="text-align:left;font-size:0.85rem">Your name (recorded in the draw log)</label>
+        <input id="pickName" autocomplete="off" placeholder="e.g. Juan Dela Cruz" style="text-align:center">
+      </div>
+
+      <div class="wheel-outer-wrap" id="pickWheelWrap">
+        <div class="wheel-pointer" id="pickPointer"></div>
+        <canvas id="pickWheelCanvas" class="wheel-canvas" width="400" height="400"></canvas>
+      </div>
+
+      <div class="name" id="pname" style="margin:10px 0 4px">Ready to Spin</div>
+      <div class="meta" id="pmeta">Click the wheel or press Ctrl+Enter to spin!</div>
+      <button class="btn" id="pgo" style="font-size:1.15rem;padding:12px 36px;margin-top:8px">SPIN WHEEL</button>
       <p class="msg" id="pmsg" role="status"></p>
     </div>
   </section>
@@ -436,7 +495,11 @@ body.pres nav,body.pres .count>div{display:none}
       </div>
 
       <div class="wall-center-stage">
-        <div class="name wbig" id="wname">Christmas Party Raffle</div>
+        <div class="wheel-outer-wrap" id="wallWheelWrap" style="max-width:380px;margin:6px auto">
+          <div class="wheel-pointer" id="wallPointer"></div>
+          <canvas id="wallWheelCanvas" class="wheel-canvas" width="400" height="400"></canvas>
+        </div>
+        <div class="name wbig" id="wname" style="margin:8px 0">Christmas Party Raffle</div>
         <div class="meta" id="wmeta">Waiting for the Grand Raffle Draw... Good luck to all employees!</div>
       </div>
 
@@ -702,6 +765,13 @@ body.pres nav,body.pres .count>div{display:none}
     }
     if(open&&which==='draw')renderDrawInfo();
     if(open&&which==='setup')renderSetup();
+    if(open&&(which==='pick'||which==='wall'||which==='draw')){
+      setTimeout(function(){
+        if(typeof updateWheelsPool==='function')updateWheelsPool();
+        if(pickWheel)pickWheel.resize();
+        if(wallWheel)wallWheel.resize();
+      }, 50);
+    }
   }
   $('t-reg').onclick=function(){tab('reg')};
   $('t-list').onclick=function(){tab('list')};
@@ -721,6 +791,7 @@ body.pres nav,body.pres .count>div{display:none}
           '</td><td><button class="btn alt small" data-rm="'+esc(e.id)+'">Remove</button></td></tr>'}).join('')+'</tbody></table>';
     }
     renderWinners();renderRounds();renderDrawInfo();renderExtra();
+    if(typeof updateWheelsPool==='function')updateWheelsPool();
   }
 
   function norm(s){return String(s||'').trim().replace(/\s+/g,' ').toLowerCase()}
@@ -1307,6 +1378,301 @@ body.pres nav,body.pres .count>div{display:none}
     pushServerData();
     if(dbh){var j=JSON.stringify(o);seen.live=j;dbh.doc('sync/live').set({v:j,t:o.ts}).catch(function(){})}
   }
+  // --- Interactive Raffle Wheel Engine (Wheel of Names / Fortune Wheel Style) ---
+  var RaffleWheel = (function() {
+    var PALETTE = [
+      '#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed', 
+      '#0891b2', '#ea580c', '#4f46e5', '#059669', '#b91c1c', 
+      '#1d4ed8', '#15803d', '#b45309', '#6d28d9', '#0e7490'
+    ];
+
+    function Wheel(canvasId, pointerId) {
+      this.canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
+      this.pointer = typeof pointerId === 'string' ? document.getElementById(pointerId) : pointerId;
+      this.rotation = 0;
+      this.isSpinning = false;
+      this.pool = [];
+      this.animId = null;
+      this.lastTickIdx = -1;
+      this.init();
+    }
+
+    Wheel.prototype.init = function() {
+      if (!this.canvas) return;
+      this.ctx = this.canvas.getContext('2d');
+      this.resize();
+      window.addEventListener('resize', this.resize.bind(this));
+    };
+
+    Wheel.prototype.resize = function() {
+      if (!this.canvas) return;
+      var rect = this.canvas.getBoundingClientRect();
+      var size = Math.min(rect.width || 380, 480);
+      if (!size || size < 100) size = 380;
+      var dpr = window.devicePixelRatio || 1;
+      this.canvas.width = size * dpr;
+      this.canvas.height = size * dpr;
+      this.size = size;
+      this.dpr = dpr;
+      this.draw();
+    };
+
+    Wheel.prototype.setPool = function(pool) {
+      this.pool = pool || [];
+      this.draw();
+    };
+
+    Wheel.prototype.draw = function() {
+      if (!this.canvas || !this.ctx) return;
+      var ctx = this.ctx;
+      var dpr = this.dpr || 1;
+      var size = (this.size || 380) * dpr;
+      ctx.clearRect(0, 0, size, size);
+
+      var cx = size / 2;
+      var cy = size / 2;
+      var radius = (size / 2) - (14 * dpr);
+      var pool = this.pool;
+      var N = pool.length;
+
+      if (N === 0) {
+        // Decorative placeholder wheel when pool empty
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#dc2626';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI);
+        ctx.fillStyle = '#2563eb';
+        ctx.fill();
+        this.drawCenterCap(ctx, cx, cy, radius * 0.28, dpr);
+        this.drawOverlayText(ctx, cx, cy, radius, dpr);
+        ctx.restore();
+        return;
+      }
+
+      var sliceAngle = (Math.PI * 2) / N;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.rotation);
+
+      for (var i = 0; i < N; i++) {
+        var startAngle = i * sliceAngle;
+        var endAngle = startAngle + sliceAngle;
+        var color = PALETTE[i % PALETTE.length];
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = Math.max(1, 1.4 * dpr);
+        ctx.stroke();
+
+        var name = (pool[i] && pool[i].name) ? pool[i].name : (pool[i] || '');
+        if (N <= 120 && name) {
+          ctx.save();
+          ctx.rotate(startAngle + sliceAngle / 2);
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = '#ffffff';
+          var fontSize = Math.max(8, Math.min(15, (radius * sliceAngle * 0.72) / dpr)) * dpr;
+          if (N > 45) fontSize = Math.max(7.5 * dpr, Math.min(10.5 * dpr, fontSize));
+          ctx.font = '800 ' + Math.round(fontSize) + 'px "Nunito", "DM Sans", sans-serif';
+          ctx.shadowColor = 'rgba(0,0,0,0.65)';
+          ctx.shadowBlur = 3 * dpr;
+
+          var maxTextWidth = radius * 0.65;
+          var truncName = name;
+          if (ctx.measureText(truncName).width > maxTextWidth) {
+            while (truncName.length > 3 && ctx.measureText(truncName + '…').width > maxTextWidth) {
+              truncName = truncName.slice(0, -1);
+            }
+            truncName += '…';
+          }
+          ctx.fillText(truncName, radius - (14 * dpr), 0);
+          ctx.restore();
+        }
+      }
+
+      ctx.restore();
+
+      // Outer wheel white border rim
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.lineWidth = 6 * dpr;
+      ctx.strokeStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.22)';
+      ctx.shadowBlur = 8 * dpr;
+      ctx.stroke();
+      ctx.restore();
+
+      // Center Hub (White circular cap matching user reference image)
+      this.drawCenterCap(ctx, cx, cy, radius * 0.26, dpr);
+
+      // Overlay text: "Click to spin" & "or press ctrl+enter"
+      if (!this.isSpinning) {
+        this.drawOverlayText(ctx, cx, cy, radius, dpr);
+      }
+    };
+
+    Wheel.prototype.drawCenterCap = function(ctx, cx, cy, hubRadius, dpr) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.32)';
+      ctx.shadowBlur = 10 * dpr;
+      ctx.shadowOffsetY = 2 * dpr;
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubRadius, 0, Math.PI * 2);
+      ctx.lineWidth = 2.5 * dpr;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 ' + Math.round(13 * dpr) + 'px "Nunito", "DM Sans", sans-serif';
+      ctx.fillText('SPIN', cx, cy);
+      ctx.restore();
+    };
+
+    Wheel.prototype.drawOverlayText = function(ctx, cx, cy, radius, dpr) {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.75)';
+      ctx.shadowBlur = 6 * dpr;
+
+      // Top text: "Click to spin"
+      var topFontSize = Math.round(15 * dpr);
+      ctx.font = '800 ' + topFontSize + 'px "Nunito", "DM Sans", sans-serif';
+      var topY = cy - (radius * 0.52);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3.5 * dpr;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx - (38 * dpr), topY - (13 * dpr));
+      ctx.lineTo(cx + (38 * dpr), topY - (13 * dpr));
+      ctx.stroke();
+      ctx.fillText('Click to spin', cx, topY);
+
+      // Bottom text: "or press ctrl+enter"
+      var btmFontSize = Math.round(13 * dpr);
+      ctx.font = '800 ' + btmFontSize + 'px "Nunito", "DM Sans", sans-serif';
+      var btmY = cy + (radius * 0.52);
+      ctx.fillText('or press ctrl+enter', cx, btmY);
+
+      // Zigzag accent below bottom text
+      var zY = btmY + (13 * dpr);
+      ctx.beginPath();
+      ctx.moveTo(cx - (28 * dpr), zY);
+      ctx.lineTo(cx - (10 * dpr), zY + (4 * dpr));
+      ctx.lineTo(cx + (10 * dpr), zY - (4 * dpr));
+      ctx.lineTo(cx + (28 * dpr), zY + (4 * dpr));
+      ctx.stroke();
+
+      ctx.restore();
+    };
+
+    Wheel.prototype.spinTo = function(winnerIndex, duration, onComplete) {
+      if (this.isSpinning || !this.pool.length) return;
+      this.isSpinning = true;
+      var N = this.pool.length;
+      var sliceAngle = (Math.PI * 2) / N;
+
+      var centerAngle = (winnerIndex + 0.5) * sliceAngle;
+      var jitter = (Math.random() - 0.5) * 0.45 * sliceAngle;
+      var targetNorm = (Math.PI * 2 - (centerAngle + jitter)) % (Math.PI * 2);
+      if (targetNorm < 0) targetNorm += Math.PI * 2;
+
+      var curNorm = this.rotation % (Math.PI * 2);
+      if (curNorm < 0) curNorm += Math.PI * 2;
+
+      var diff = (targetNorm - curNorm + Math.PI * 2) % (Math.PI * 2);
+      var fullSpins = 7 * Math.PI * 2;
+      var totalRotation = fullSpins + diff;
+
+      var startRot = this.rotation;
+      var startTime = performance.now();
+      var dur = duration || 5400;
+      var self = this;
+
+      function step(now) {
+        var elapsed = now - startTime;
+        var p = Math.min(elapsed / dur, 1);
+        var ease = 1 - Math.pow(1 - p, 4.6);
+        self.rotation = startRot + (totalRotation * ease);
+
+        var normA = ((Math.PI * 2) - (self.rotation % (Math.PI * 2))) % (Math.PI * 2);
+        var curIdx = Math.floor(normA / sliceAngle);
+        if (curIdx !== self.lastTickIdx) {
+          self.lastTickIdx = curIdx;
+          if (typeof playHit === 'function') {
+            var vol = Math.max(0.12, 0.4 * (1 - p));
+            var pitch = 220 + Math.random() * 35;
+            playHit(vol, pitch);
+          }
+          if (self.pointer) {
+            self.pointer.classList.add('tick');
+            setTimeout(function() {
+              if (self.pointer) self.pointer.classList.remove('tick');
+            }, 45);
+          }
+        }
+
+        self.draw();
+
+        if (p < 1) {
+          self.animId = requestAnimationFrame(step);
+        } else {
+          self.isSpinning = false;
+          self.draw();
+          if (onComplete) onComplete();
+        }
+      }
+
+      if (this.animId) cancelAnimationFrame(this.animId);
+      this.animId = requestAnimationFrame(step);
+    };
+
+    return Wheel;
+  })();
+
+  var pickWheel = null, wallWheel = null;
+  function getPickWheel() {
+    if (!pickWheel && $('pickWheelCanvas')) {
+      pickWheel = new RaffleWheel('pickWheelCanvas', 'pickPointer');
+    }
+    return pickWheel;
+  }
+  function getWallWheel() {
+    if (!wallWheel && $('wallWheelCanvas')) {
+      wallWheel = new RaffleWheel('wallWheelCanvas', 'wallPointer');
+    }
+    return wallWheel;
+  }
+  function updateWheelsPool() {
+    var r = activeRound();
+    var p = r ? poolFor(r) : [];
+    var pw = getPickWheel();
+    if (pw) pw.setPool(p);
+    var ww = getWallWheel();
+    if (ww) ww.setPool(p);
+  }
+
   var shuf=null, lastWonCelebrated=null;
   function setStageNames(name, meta) {
     if ($('dname')) $('dname').textContent = name;
@@ -1394,7 +1760,7 @@ body.pres nav,body.pres .count>div{display:none}
     if ($('pinfo')) $('pinfo').textContent = rText;
     if ($('winfo')) $('winfo').textContent = rText;
 
-    var d = live || {}, on = d.phase === 'drawing' && (Date.now() - (d.ts || 0) < 5000);
+    var d = live || {}, on = (d.phase === 'drawing' || d.phase === 'spinning') && (Date.now() - (d.ts || 0) < 6500);
     var isBtnDisabled = $('go').disabled || on || spinning;
     if ($('pgo') && $('pgo').disabled !== isBtnDisabled) $('pgo').disabled = isBtnDisabled;
     if ($('wgo') && $('wgo').disabled !== isBtnDisabled) $('wgo').disabled = isBtnDisabled;
@@ -1405,27 +1771,17 @@ body.pres nav,body.pres .count>div{display:none}
     if(on){
       if (wbox) wbox.className = 'panel stage wall-stage drawing';
       if (wstatus) {
-        wstatus.textContent = '🔴 LIVE DRAW IN PROGRESS';
+        wstatus.textContent = '🔴 WHEEL SPINNING...';
         wstatus.style.background = 'var(--berry)';
       }
-      // Only start spectator shuffle if NOT the device spinning locally
-      if (!spinning && !shuf) {
-        startRoll(4800);
-        shuf = setInterval(function(){
-          if (!live || live.phase !== 'drawing' || (Date.now() - (live.ts || 0) > 5200)) {
-            if (shuf) { clearInterval(shuf); shuf = null; }
-            stopRoll();
-            renderLive();
-            return;
-          }
-          var e = employees[Math.floor(Math.random() * employees.length)];
-          if (e) {
-            setStageNames(e.name, 'Randomizing entries…');
-          }
-        }, 90);
+      var ww = getWallWheel();
+      if (ww && !ww.isSpinning && !spinning) {
+        updateWheelsPool();
+        var targetIdx = typeof d.targetIndex === 'number' ? d.targetIndex : 0;
+        ww.spinTo(targetIdx, 5200);
       }
-      if ($('wmeta')) $('wmeta').textContent = 'Randomizing all qualified entries across agencies...';
-      if ($('pmeta')) $('pmeta').textContent = 'Drawing…';
+      if ($('wmeta')) $('wmeta').textContent = 'The wheel is spinning for the lucky winner...';
+      if ($('pmeta')) $('pmeta').textContent = 'Spinning…';
     } else {
       if (shuf) {
         clearInterval(shuf);
@@ -1540,6 +1896,25 @@ body.pres nav,body.pres .count>div{display:none}
     if(drawnOf(r)>=r.total){m.textContent='All draws in this round are complete.';m.className='msg ok';return}
     m.textContent='';drawBy='Picker: '+n;$('go').click();
   };
+
+  // Click directly on the Wheel Canvas to spin!
+  if ($('pickWheelCanvas')) {
+    $('pickWheelCanvas').onclick = function() {
+      if ($('pgo') && !$('pgo').disabled) $('pgo').click();
+    };
+  }
+
+  // Ctrl+Enter or Cmd+Enter shortcut to spin (matching user's reference image!)
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (current === 'pick') {
+        if ($('pgo') && !$('pgo').disabled) $('pgo').click();
+      } else if (current === 'draw') {
+        if ($('go') && !$('go').disabled) $('go').click();
+      }
+    }
+  });
   $('wfs').onclick=function(){var el=$('wbox');try{(el.requestFullscreen||el.webkitRequestFullscreen).call(el)}catch(e){}};
   if ($('wgo')) {
     $('wgo').onclick = function() {
@@ -1872,78 +2247,81 @@ body.pres nav,body.pres .count>div{display:none}
       say('No eligible employees left in this round pool.','err');
       return;
     }
-    var pick=p[Math.floor(Math.random()*p.length)];
+    var winnerIdx = Math.floor(Math.random() * p.length);
+    var pick = p[winnerIdx];
     spinning=true;
     if ($('go')) $('go').disabled=true;
     if ($('pgo')) $('pgo').disabled=true;
     if ($('wgo')) $('wgo').disabled=true;
     $('stage').className='panel stage drawing';
+    var wbox = $('wbox');
+    if (wbox) wbox.className='panel stage wall-stage drawing';
+    var wstatus = $('wstatus');
+    if (wstatus) {
+      wstatus.textContent = '🔴 WHEEL SPINNING...';
+      wstatus.style.background = 'var(--berry)';
+    }
 
     var curInfo = r.set+' · '+rlabel(r)+' · Drawing Prize: '+(r.prize||'Raffle Prize');
-    liveSet({phase:'drawing', info: curInfo});
-    setStageNames('Drawing…', 'Randomizing all entries…');
-    startRoll(4800);
+    liveSet({phase:'spinning', targetIndex: winnerIdx, targetName: pick.name, targetId: pick.id, info: curInfo});
+    setStageNames('Spinning…', 'The wheel is spinning for the lucky winner!');
 
-    var ticks=0, total=36;
-    (function step(){
-      if(ticks<total){
-        var randEmp = p[Math.floor(Math.random()*p.length)];
-        setStageNames(randEmp.name, 'Drawing…');
-        ticks++;
-        var delay = 85 + Math.pow(ticks / total, 2.6) * 520;
-        setTimeout(step, delay);
-      }else{
-        // 1. Draw roll finishes: smoothly fade out the shuffle into suspense
-        stopRoll();
-        setStageFade(true);
-        if ($('dmeta')) $('dmeta').textContent = '✨ And the winner is... ✨';
-        if ($('pmeta')) $('pmeta').textContent = '✨ And the winner is... ✨';
-        if ($('wmeta')) $('wmeta').textContent = '✨ And the winner is... ✨';
-        var wstatus = $('wstatus');
+    updateWheelsPool();
+    var pw = getPickWheel();
+    var ww = getWallWheel();
+    var spinDur = 5400;
+    if (pw) pw.spinTo(winnerIdx, spinDur);
+    if (ww) ww.spinTo(winnerIdx, spinDur);
+
+    setTimeout(function(){
+      // 1. Wheel stops! Smoothly fade into suspense
+      setStageFade(true);
+      if ($('dmeta')) $('dmeta').textContent = '✨ And the winner is... ✨';
+      if ($('pmeta')) $('pmeta').textContent = '✨ And the winner is... ✨';
+      if ($('wmeta')) $('wmeta').textContent = '✨ And the winner is... ✨';
+      if (wstatus) {
+        wstatus.textContent = '✨ REVEALING WINNER...';
+        wstatus.style.background = 'var(--gold)';
+      }
+
+      // 2. After suspense breath (450ms), burst-reveal the official winner!
+      setTimeout(function(){
+        spinning=false;
+        setStageFade(false);
+        var winMeta = 'Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'')+(r.prize?' · Prize: '+r.prize:'');
+        setStageNames(pick.name, winMeta);
+        $('stage').className='panel stage won';
+        if (wbox) wbox.className='panel stage wall-stage won';
         if (wstatus) {
-          wstatus.textContent = '✨ REVEALING WINNER...';
+          wstatus.textContent = '🏆 WINNER DRAWN!';
           wstatus.style.background = 'var(--gold)';
         }
+        triggerWinnerReveal();
 
-        // 2. After suspense breath (450ms), burst-reveal the official winner!
-        setTimeout(function(){
-          spinning=false;
-          setStageFade(false);
-          var winMeta = 'Employee ID '+pick.id+(pick.dept?' · '+pick.dept:'')+(pick.unit?' · '+pick.unit:'')+(r.prize?' · Prize: '+r.prize:'');
-          setStageNames(pick.name, winMeta);
-          $('stage').className='panel stage won';
-          var wbox = $('wbox');
-          if (wbox) wbox.className='panel stage wall-stage won';
-          if (wstatus) {
-            wstatus.textContent = '🏆 WINNER DRAWN!';
-            wstatus.style.background = 'var(--gold)';
-          }
-          triggerWinnerReveal();
+        var dn=drawnOf(r)+1;
+        winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||'',wonAt:Date.now()}));
+        log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
 
-          var dn=drawnOf(r)+1;
-          winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||'',wonAt:Date.now()}));
-          log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
+        // Immediately remove winner from registered employees pool
+        employees = employees.filter(function(e){ return norm(e.id) !== norm(pick.id); });
 
-          // Immediately remove winner from registered employees pool
-          employees = employees.filter(function(e){ return norm(e.id) !== norm(pick.id); });
+        // Auto advance activeId to next round if current round is complete
+        if (dn >= r.total) {
+          var nx = rounds.filter(function(rd){ return rd.id !== r.id && drawnOf(rd) < rd.total; })[0];
+          if (nx) activeId = nx.id;
+        }
 
-          // Auto advance activeId to next round if current round is complete
-          if (dn >= r.total) {
-            var nx = rounds.filter(function(rd){ return rd.id !== r.id && drawnOf(rd) < rd.total; })[0];
-            if (nx) activeId = nx.id;
-          }
+        save();
+        render();
 
-          save();
-          render();
-
-          var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
-          lastWonCelebrated = pick.name;
-          liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
-          playCelebration();
-          launchConfetti();
-        }, 450);
-      }
-    })();
+        var finInfo = r.set+' · '+rlabel(r)+' · '+dn+' of '+r.total+' drawn'+(r.prize?' · Prize: '+r.prize:'');
+        lastWonCelebrated = pick.name;
+        liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
+        playCelebration();
+        launchConfetti();
+        updateWheelsPool();
+      }, 450);
+    }, spinDur);
   };
 
   render();
