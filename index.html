@@ -1539,6 +1539,8 @@ body.pres nav,body.pres .count>div{display:none}
       this.pool = [];
       this.animId = null;
       this.lastTickIdx = -1;
+      this.winningIndex = -1;
+      this.liftProgress = 0;
       this.cacheCanvas = document.createElement('canvas');
       this.cacheCtx = this.cacheCanvas.getContext('2d');
       this.needsRedrawCache = true;
@@ -1699,18 +1701,81 @@ body.pres nav,body.pres .count>div{display:none}
 
       ctx.clearRect(0, 0, size, size);
 
-      // Fast GPU-accelerated blit of cached wheel
+      // 1. Draw cached wheel rotated by current angle
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(this.rotation);
       ctx.drawImage(this.cacheCanvas, -cx, -cy);
+
+      // 2. If a winner has been drawn and slice is lifting, draw the highlighted popped-out triangle!
+      var W = this.winningIndex;
+      var N = this.pool.length;
+      if (W >= 0 && W < N && this.liftProgress > 0) {
+        var sliceAngle = (Math.PI * 2) / N;
+        var startAngle = W * sliceAngle;
+        var endAngle = startAngle + sliceAngle;
+        var midAngle = startAngle + sliceAngle / 2;
+        var liftDist = (22 * dpr) * this.liftProgress;
+        var ox = Math.cos(midAngle) * liftDist;
+        var oy = Math.sin(midAngle) * liftDist;
+
+        ctx.save();
+        ctx.translate(ox, oy);
+
+        // Popped triangle sector
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius * (1 + 0.04 * this.liftProgress), startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = PALETTE[W % PALETTE.length];
+        ctx.shadowColor = 'rgba(255, 215, 0, 0.95)';
+        ctx.shadowBlur = 20 * dpr;
+        ctx.fill();
+
+        // Shimmering gold outline on the lifted slice
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 4 * dpr;
+        ctx.stroke();
+
+        // High contrast text inside lifted slice
+        var e = this.pool[W];
+        var name = (e && e.name) ? e.name : (e || '');
+        var empId = (e && e.id) ? '#' + e.id : '';
+        var agency = (e && e.dept) ? e.dept : '';
+        var area = (e && e.unit) ? e.unit : '';
+        var details = [empId, agency, area].filter(Boolean).join(' · ');
+
+        ctx.save();
+        ctx.rotate(midAngle);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+
+        var fontTitle = Math.max(10.5, Math.min(24, (radius * sliceAngle * 0.46) / dpr)) * dpr;
+        var fontSub = Math.max(8, Math.min(15, fontTitle * 0.72)) * dpr;
+
+        ctx.font = '900 ' + Math.round(fontTitle) + 'px "Nunito", "DM Sans", sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur = 4 * dpr;
+        ctx.fillText(name, radius * 1.02 - (14 * dpr), -5 * dpr);
+
+        if (details) {
+          ctx.font = '800 ' + Math.round(fontSub) + 'px "Nunito", "DM Sans", sans-serif';
+          ctx.fillStyle = '#fef08a'; // Bright gold yellow text for details
+          ctx.fillText(details, radius * 1.02 - (14 * dpr), 7 * dpr);
+        }
+        ctx.restore();
+
+        ctx.restore();
+      }
+
       ctx.restore();
 
-      // Center Hub Cap
+      // 3. Center Hub Cap drawn on top
       this.drawCenterCap(ctx, cx, cy, radius * 0.26, dpr);
 
-      // Overlay text if idle
-      if (!this.isSpinning) {
+      // 4. Overlay text if idle
+      if (!this.isSpinning && this.winningIndex < 0) {
         this.drawOverlayText(ctx, cx, cy, radius, dpr);
       }
     };
@@ -1780,15 +1845,44 @@ body.pres nav,body.pres .count>div{display:none}
       ctx.restore();
     };
 
-    Wheel.prototype.spinTo = function(winnerIndex, duration, onComplete) {
+    Wheel.prototype.spinTo = function(target, duration, onComplete) {
       if (this.isSpinning || !this.pool.length) return;
       this.isSpinning = true;
+      this.winningIndex = -1;
+      this.liftProgress = 0;
+
       var N = this.pool.length;
       var sliceAngle = (Math.PI * 2) / N;
 
-      var centerAngle = (winnerIndex + 0.5) * sliceAngle;
-      var jitter = (Math.random() - 0.5) * 0.45 * sliceAngle;
-      var targetNorm = (Math.PI * 2 - (centerAngle + jitter)) % (Math.PI * 2);
+      var resolvedIndex = -1;
+      var targetId = (typeof target === 'object' && target) ? target.id : (typeof target === 'string' ? target : null);
+      var targetName = (typeof target === 'object' && target) ? target.name : null;
+      var rawIdx = (typeof target === 'object' && target && typeof target.index === 'number') ? target.index : (typeof target === 'number' ? target : -1);
+
+      if (targetId) {
+        for (var i = 0; i < N; i++) {
+          if (this.pool[i] && norm(this.pool[i].id) === norm(targetId)) {
+            resolvedIndex = i;
+            break;
+          }
+        }
+      }
+      if (resolvedIndex === -1 && targetName) {
+        for (var i = 0; i < N; i++) {
+          if (this.pool[i] && norm(this.pool[i].name) === norm(targetName)) {
+            resolvedIndex = i;
+            break;
+          }
+        }
+      }
+      if (resolvedIndex === -1 && rawIdx >= 0 && rawIdx < N) {
+        resolvedIndex = rawIdx;
+      }
+      if (resolvedIndex === -1) resolvedIndex = 0;
+
+      // DEAD CENTER on the exact winning sector - NO JITTER so arrow points directly to center of the slice!
+      var centerAngle = (resolvedIndex + 0.5) * sliceAngle;
+      var targetNorm = ((Math.PI * 2) - (centerAngle % (Math.PI * 2))) % (Math.PI * 2);
       if (targetNorm < 0) targetNorm += Math.PI * 2;
 
       var curNorm = this.rotation % (Math.PI * 2);
@@ -1838,8 +1932,29 @@ body.pres nav,body.pres .count>div{display:none}
         } else {
           self.isSpinning = false;
           if (self.pointer) self.pointer.style.transform = 'translateY(-50%) rotate(0deg)';
-          self.draw();
-          if (onComplete) onComplete();
+
+          // Smooth elastic pop-out / lift animation of the winning triangle towards the pointer!
+          self.winningIndex = resolvedIndex;
+          self.liftProgress = 0;
+          var liftStart = performance.now();
+          var liftDur = 450;
+
+          function liftStep(nowLift) {
+            var el = nowLift - liftStart;
+            var lp = Math.min(el / liftDur, 1);
+            // Elastic spring bounce ease-out
+            var easeLift = (lp === 1) ? 1 : (Math.pow(2, -10 * lp) * Math.sin((lp - 0.1) * (2 * Math.PI) / 0.4) + 1);
+            self.liftProgress = Math.max(0, easeLift);
+            self.draw();
+            if (lp < 1 && self.winningIndex >= 0) {
+              requestAnimationFrame(liftStep);
+            } else {
+              self.liftProgress = 1;
+              self.draw();
+              if (onComplete) onComplete();
+            }
+          }
+          requestAnimationFrame(liftStep);
         }
       }
 
@@ -1983,8 +2098,8 @@ body.pres nav,body.pres .count>div{display:none}
       if (ww && !ww.isSpinning && !spinning && spinTs && spinTs !== lastWallSpinTs) {
         lastWallSpinTs = spinTs;
         updateWheelsPool(true);
-        var targetIdx = typeof d.targetIndex === 'number' ? d.targetIndex : 0;
-        ww.spinTo(targetIdx, 3950);
+        var targetObj = { id: d.targetId, name: d.targetName, index: d.targetIndex };
+        ww.spinTo(targetObj, 3950);
       }
       if ($('wmeta')) $('wmeta').textContent = 'The wheel is spinning for the lucky winner...';
       if ($('pmeta')) $('pmeta').textContent = 'Spinning…';
@@ -2485,8 +2600,9 @@ body.pres nav,body.pres .count>div{display:none}
     var pw = getPickWheel();
     var ww = getWallWheel();
     var spinDur = 4000;
-    if (pw) pw.spinTo(winnerIdx, spinDur);
-    if (ww) ww.spinTo(winnerIdx, spinDur);
+    var targetObj = { id: pick.id, name: pick.name, index: winnerIdx };
+    if (pw) pw.spinTo(targetObj, spinDur);
+    if (ww) ww.spinTo(targetObj, spinDur);
 
     setTimeout(function(){
       // 1. Wheel stops! Smoothly fade into suspense
