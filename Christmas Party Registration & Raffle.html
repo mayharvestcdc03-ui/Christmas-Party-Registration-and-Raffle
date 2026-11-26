@@ -574,7 +574,10 @@ body.pres nav,body.pres .count>div{display:none}
 
       <div class="name" id="pname" style="margin:10px 0 4px">Ready to Spin</div>
       <div class="meta" id="pmeta">Click the wheel or press Ctrl+Enter to spin!</div>
-      <button class="btn" id="pgo" style="font-size:1.15rem;padding:12px 36px;margin-top:8px">SPIN WHEEL</button>
+      <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn" id="pgo" style="font-size:1.15rem;padding:12px 36px">SPIN WHEEL</button>
+        <button class="btn alt" id="preset" type="button" style="font-size:1rem;padding:12px 20px;border-radius:10px" title="Reset wheel stage back to neutral state">↺ Reset Wheel</button>
+      </div>
       <p class="msg" id="pmsg" role="status"></p>
     </div>
   </section>
@@ -584,7 +587,10 @@ body.pres nav,body.pres .count>div{display:none}
       <div class="wall-top-bar">
         <div id="wstatus" class="wall-status-badge">✨ STAGE READY</div>
         <p class="hint" id="winfo"></p>
-        <button class="btn alt small wall-fs-btn" id="wfs" type="button" title="Toggle Fullscreen Projector Mode">⛶ Full Screen</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn alt small" id="wreset" type="button" title="Reset wheel back to neutral stage">↺ Reset Stage</button>
+          <button class="btn alt small wall-fs-btn" id="wfs" type="button" title="Toggle Fullscreen Projector Mode">⛶ Full Screen</button>
+        </div>
       </div>
 
       <div class="wall-center-stage">
@@ -741,6 +747,7 @@ body.pres nav,body.pres .count>div{display:none}
       <label class="opts"><input type="checkbox" id="noRepeat" checked> Exclude people who already won</label>
       <div class="stage-controls">
         <button class="btn" id="go">Draw a winner</button>
+        <button class="btn alt" id="stgReset" type="button" title="Reset stage back to neutral state">↺ Reset Stage</button>
         <button class="btn alt" id="btnSoundToggle" type="button" title="Toggle drum roll & celebration sound">🔊 Sound ON</button>
         <button class="btn alt" id="wfsStage" type="button">Full screen</button>
       </div>
@@ -2296,6 +2303,18 @@ body.pres nav,body.pres .count>div{display:none}
       }
     }
   });
+
+  // Dedicated Reset Wheel / Stage handler (returns wheel to neutral ready-to-spin state without page refresh)
+  function handleResetStageClick() {
+    if (spinning) return;
+    resetStage();
+    renderDrawInfo();
+    renderLive();
+    say('Wheel stage has been reset to Ready to Spin.', 'ok');
+  }
+  if ($('preset')) $('preset').onclick = handleResetStageClick;
+  if ($('wreset')) $('wreset').onclick = handleResetStageClick;
+  if ($('stgReset')) $('stgReset').onclick = handleResetStageClick;
   $('wfs').onclick=function(){
     var el=$('wbox');
     try{
@@ -2357,19 +2376,23 @@ body.pres nav,body.pres .count>div{display:none}
   function resetStage(){
     $('dname').textContent='Ready to draw';
     $('stage').className='panel stage';
-    if ($('pname')) $('pname').textContent='Ready to draw';
-    if ($('wname')) $('wname').textContent='Ready to draw';
+    if ($('pname')) $('pname').textContent='Ready to Spin';
+    if ($('pmeta')) $('pmeta').textContent='Click the wheel or press Ctrl+Enter to spin!';
+    if ($('wname')) $('wname').textContent='Christmas Party Raffle';
+    if ($('wmeta')) $('wmeta').textContent='Waiting for the Grand Raffle Draw... Good luck to all employees!';
     if ($('wbox')) $('wbox').className='panel stage wall-stage';
     if ($('wstatus')) {
       $('wstatus').textContent='✨ STAGE READY';
       $('wstatus').style.background='var(--pine)';
     }
+    setStageFade(false);
     var pw = getPickWheel();
     if (pw) pw.resetWinner();
     var ww = getWallWheel();
     if (ww) ww.resetWinner();
     lastWonCelebrated = null;
-    liveSet({phase:'idle', name:'Ready to draw', meta:'Press the button on the picker to pick a winner.'});
+    updateWheelsPool(true);
+    liveSet({phase:'idle', name:'Ready to Spin', meta:'Click the wheel or press the button to spin.'});
   }
   function poolFor(r){
     var won={};
