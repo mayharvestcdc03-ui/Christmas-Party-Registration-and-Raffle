@@ -1034,9 +1034,22 @@ body.pres nav,body.pres .count>div{display:none}
     // 1. Smart merge winners first
     if (Array.isArray(d.winners)) {
       var winMap = {};
-      winners.forEach(function(w){ if (w && w.id) winMap[norm(w.id)] = w; });
-      d.winners.forEach(function(w){ if (w && w.id) winMap[norm(w.id)] = w; });
-      var mergedWin = Object.keys(winMap).map(function(k){ return winMap[k]; });
+      var mergedWin = [];
+      var allW = winners.concat(d.winners);
+      allW.forEach(function(w){
+        if (w && w.id) {
+          var k = norm(w.id);
+          if (!winMap[k]) {
+            winMap[k] = w;
+            mergedWin.push(w);
+          } else {
+            Object.assign(winMap[k], w);
+          }
+        }
+      });
+      mergedWin.sort(function(a, b){
+        return Number(a.wonAt || a.at || 0) - Number(b.wonAt || b.at || 0);
+      });
       if (JSON.stringify(mergedWin) !== JSON.stringify(winners)) {
         winners = mergedWin;
         updated = true;
@@ -1352,7 +1365,11 @@ body.pres nav,body.pres .count>div{display:none}
 
     if (countBadge) countBadge.textContent = winners.length + (winners.length === 1 ? ' Winner' : ' Winners');
 
-    var list = winners.slice().reverse();
+    // Sort strictly by latest timestamp descending so true latest winner is first
+    var list = winners.slice().sort(function(a, b) {
+      return Number(b.wonAt || b.at || 0) - Number(a.wonAt || a.at || 0);
+    });
+
     var html = list.map(function(w, idx) {
       var isLatest = (idx === 0);
       var r = rounds.filter(function(rd){ return rd.id === w.rid; })[0];
@@ -1452,35 +1469,19 @@ body.pres nav,body.pres .count>div{display:none}
           setStageNames(d.name, d.meta || 'Winner drawn!');
         }
       } else {
-        // Idle state: If there are already winners, display the latest winner!
-        if (winners && winners.length > 0) {
-          var latestW = winners[winners.length - 1];
-          if (wbox) wbox.className = 'panel stage wall-stage won';
-          if (wstatus) {
-            wstatus.textContent = '🏆 LATEST WINNER';
-            wstatus.style.background = 'var(--gold)';
-          }
-          var rOfW = rounds.filter(function(rd){ return rd.id === latestW.rid; })[0];
-          var prizeOfW = (rOfW && rOfW.prize) ? rOfW.prize : (latestW.prize || '');
-          var latestMeta = 'Employee ID ' + latestW.id + (latestW.dept ? ' · ' + latestW.dept : '') + (latestW.unit ? ' · ' + latestW.unit : '') + (prizeOfW ? ' · Prize: ' + prizeOfW : '');
-          if ($('wname')) $('wname').textContent = latestW.name;
-          if ($('wmeta')) $('wmeta').textContent = latestMeta;
-        } else {
-          // No winners yet
-          if (wbox) wbox.className = 'panel stage wall-stage';
-          if (wstatus) {
-            wstatus.textContent = '🎄 GRAND CELEBRATION';
-            wstatus.style.background = 'var(--pine)';
-          }
-          if (!spinning) {
-            if ($('wname')) $('wname').textContent = (evInfo && evInfo.name) ? evInfo.name : 'Christmas Party Raffle';
-            if ($('wmeta')) $('wmeta').textContent = 'Waiting for the Grand Raffle Draw... Good luck to all employees!';
-          }
+        // Idle / ready state - EXACT MIRROR OF DRAW PICKER (NO DRAW BUTTON)!
+        if (wbox) wbox.className = 'panel stage wall-stage';
+        if (wstatus) {
+          wstatus.textContent = '✨ STAGE READY';
+          wstatus.style.background = 'var(--pine)';
         }
-
         if (!spinning) {
-          if ($('pname')) $('pname').textContent = 'Ready';
-          if ($('pmeta')) $('pmeta').textContent = '';
+          var idleName = d.name || ($('dname') ? $('dname').textContent : 'Ready to draw');
+          var idleMeta = d.meta || ($('dmeta') ? $('dmeta').textContent : (r ? 'Press the button on the picker to pick a winner.' : 'All rounds complete'));
+          if ($('wname')) $('wname').textContent = idleName;
+          if ($('wmeta')) $('wmeta').textContent = idleMeta;
+          if ($('pname')) $('pname').textContent = idleName;
+          if ($('pmeta')) $('pmeta').textContent = idleMeta;
         }
       }
     }
@@ -1580,7 +1581,18 @@ body.pres nav,body.pres .count>div{display:none}
     }
     return r || null;
   }
-  function resetStage(){$('dname').textContent='Ready to draw';$('stage').className='panel stage'}
+  function resetStage(){
+    $('dname').textContent='Ready to draw';
+    $('stage').className='panel stage';
+    if ($('pname')) $('pname').textContent='Ready to draw';
+    if ($('wname')) $('wname').textContent='Ready to draw';
+    if ($('wbox')) $('wbox').className='panel stage wall-stage';
+    if ($('wstatus')) {
+      $('wstatus').textContent='✨ STAGE READY';
+      $('wstatus').style.background='var(--pine)';
+    }
+    liveSet({phase:'idle', name:'Ready to draw', meta:'Press the button on the picker to pick a winner.'});
+  }
   function poolFor(r){
     var won={};
     if($('noRepeat').checked)winners.forEach(function(w){won[norm(w.id)]=1});
@@ -1909,7 +1921,7 @@ body.pres nav,body.pres .count>div{display:none}
           triggerWinnerReveal();
 
           var dn=drawnOf(r)+1;
-          winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||''}));
+          winners.push(Object.assign({},pick,{rid:r.id,n:dn,prize:r.prize||'',set:r.set||'',wonAt:Date.now()}));
           log.push({t:Date.now(),by:by,round:r.set+' · '+rlabel(r),n:dn,name:pick.name,id:pick.id});
 
           // Immediately remove winner from registered employees pool
