@@ -1863,13 +1863,18 @@ body.pres nav,body.pres .count>div{display:none}
     }
     return wallWheel;
   }
-  function updateWheelsPool() {
+  var lastWallSpinTs = 0;
+  function updateWheelsPool(force) {
+    // If we're displaying a winner, keep the wheel resting on that winner until the next spin is explicitly triggered
+    var isWonPhase = live && live.phase === 'won';
+    if (isWonPhase && !force) return;
+
     var r = activeRound();
     var p = r ? poolFor(r) : [];
     var pw = getPickWheel();
-    if (pw) pw.setPool(p);
+    if (pw && (!pw.isSpinning || force)) pw.setPool(p);
     var ww = getWallWheel();
-    if (ww) ww.setPool(p);
+    if (ww && (!ww.isSpinning || force)) ww.setPool(p);
   }
 
   var shuf=null, lastWonCelebrated=null;
@@ -1973,9 +1978,11 @@ body.pres nav,body.pres .count>div{display:none}
         wstatus.textContent = '🔴 WHEEL SPINNING...';
         wstatus.style.background = 'var(--berry)';
       }
+      var spinTs = Number(d.ts) || 0;
       var ww = getWallWheel();
-      if (ww && !ww.isSpinning && !spinning) {
-        updateWheelsPool();
+      if (ww && !ww.isSpinning && !spinning && spinTs && spinTs !== lastWallSpinTs) {
+        lastWallSpinTs = spinTs;
+        updateWheelsPool(true);
         var targetIdx = typeof d.targetIndex === 'number' ? d.targetIndex : 0;
         ww.spinTo(targetIdx, 3950);
       }
@@ -2468,11 +2475,13 @@ body.pres nav,body.pres .count>div{display:none}
       wstatus.style.background = 'var(--berry)';
     }
 
+    var spinTs = Date.now();
+    lastWallSpinTs = spinTs;
     var curInfo = r.set+' · '+rlabel(r)+' · Drawing Prize: '+(r.prize||'Raffle Prize');
-    liveSet({phase:'spinning', targetIndex: winnerIdx, targetName: pick.name, targetId: pick.id, info: curInfo});
+    liveSet({phase:'spinning', targetIndex: winnerIdx, targetName: pick.name, targetId: pick.id, info: curInfo, ts: spinTs});
     setStageNames('Spinning…', 'The wheel is spinning for the lucky winner!');
 
-    updateWheelsPool();
+    updateWheelsPool(true);
     var pw = getPickWheel();
     var ww = getWallWheel();
     var spinDur = 4000;
@@ -2525,7 +2534,6 @@ body.pres nav,body.pres .count>div{display:none}
         liveSet({phase:'won', name:pick.name, meta:winMeta, info:finInfo});
         playCelebration();
         launchConfetti();
-        updateWheelsPool();
       }, 350);
     }, spinDur);
   };
