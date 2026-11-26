@@ -595,7 +595,13 @@ body.pres nav,body.pres .count>div{display:none}
       <button class="btn" id="load">Load pasted list</button>
       <p class="msg" id="amsg" role="status"></p>
     </div>
-    <div class="tools"><h2 id="atitle">Allowed employees</h2><button class="btn alt small" id="clearAllowed">Remove list</button></div>
+    <div class="tools">
+      <h2 id="atitle">Allowed employees</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn small" id="expRegisteredAllowed" style="background:var(--pine);color:var(--pine-ink);font-weight:700">📊 Download Registered Employees (Excel)</button>
+        <button class="btn alt small" id="clearAllowed">Remove list</button>
+      </div>
+    </div>
     <div class="panel table" id="alist"></div>
   </section>
 
@@ -1020,6 +1026,51 @@ body.pres nav,body.pres .count>div{display:none}
     employees.forEach(function(e,i){rows.push([i+1,e.name,e.id,e.dept,e.unit||'',e.at?new Date(e.at).toLocaleString():''])});
     exportCSV('confirmed-entries',rows,$('xmsg1'));
   };
+  if ($('expRegisteredAllowed')) {
+    $('expRegisteredAllowed').onclick = function() {
+      if (!employees || !employees.length) {
+        alert('Wala pang rehistradong empleyado sa kasalukuyan.');
+        return;
+      }
+      var wonMap = {};
+      winners.forEach(function(w){ wonMap[norm(w.id)] = w; });
+
+      var rows = [
+        ['No.', 'Employee Number', 'Full Name', 'Agency', 'Area / Department', 'Registration Date & Time', 'Raffle Status', 'Prize Won', 'Signature Claimed']
+      ];
+
+      var list = employees.slice().sort(function(a, b) {
+        return Number(a.at || 0) - Number(b.at || 0);
+      });
+
+      list.forEach(function(e, i) {
+        var w = wonMap[norm(e.id)];
+        var isWon = !!w;
+        var prize = '–';
+        var claimed = '–';
+        if (w) {
+          var r = rounds.filter(function(rd){ return rd.id === w.rid; })[0];
+          prize = (r && r.prize) ? r.prize : (w.prize || 'Raffle Winner');
+          claimed = w.claimed ? ('Claimed on ' + new Date(w.claimed).toLocaleString()) : 'Unclaimed';
+        }
+        var regDate = e.at ? new Date(e.at).toLocaleString() : 'Registered';
+
+        rows.push([
+          i + 1,
+          e.id,
+          e.name,
+          e.dept || '–',
+          e.unit || '–',
+          regDate,
+          isWon ? 'Raffle Winner' : 'Registered / Qualified',
+          prize,
+          claimed
+        ]);
+      });
+
+      exportCSV('MHC-Christmas-Party-Registered-Employees', rows, $('amsg') || $('xmsg1'));
+    };
+  }
   $('expWin').onclick=function(){
     var rows=[['Set','Round agencies','Draw no.','Full name','Employee number','Agency','Department','Prize','Claimed','Claimed at']];
     rounds.forEach(function(r){winners.filter(function(w){return w.rid===r.id}).forEach(function(w){rows.push([r.set,rlabel(r),w.n||'',w.name,w.id,w.dept,w.unit||'',r.prize||'',w.claimed?'Yes':'No',w.claimed?new Date(w.claimed).toLocaleString():''])})});
@@ -1474,28 +1525,49 @@ body.pres nav,body.pres .count>div{display:none}
         ctx.lineWidth = Math.max(1, 1.4 * dpr);
         ctx.stroke();
 
-        var name = (pool[i] && pool[i].name) ? pool[i].name : (pool[i] || '');
-        if (N <= 120 && name) {
+        var e = pool[i];
+        var name = (e && e.name) ? e.name : (e || '');
+        var empId = (e && e.id) ? '#' + e.id : '';
+        var agency = (e && e.dept) ? e.dept : '';
+        var area = (e && e.unit) ? e.unit : '';
+        var details = [empId, agency, area].filter(Boolean).join(' · ');
+
+        if (N <= 250 && name) {
           ctx.save();
           ctx.rotate(startAngle + sliceAngle / 2);
           ctx.textAlign = 'right';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = '#ffffff';
-          var fontSize = Math.max(8, Math.min(15, (radius * sliceAngle * 0.72) / dpr)) * dpr;
-          if (N > 45) fontSize = Math.max(7.5 * dpr, Math.min(10.5 * dpr, fontSize));
-          ctx.font = '800 ' + Math.round(fontSize) + 'px "Nunito", "DM Sans", sans-serif';
-          ctx.shadowColor = 'rgba(0,0,0,0.65)';
+          ctx.shadowColor = 'rgba(0,0,0,0.7)';
           ctx.shadowBlur = 3 * dpr;
 
-          var maxTextWidth = radius * 0.65;
-          var truncName = name;
-          if (ctx.measureText(truncName).width > maxTextWidth) {
-            while (truncName.length > 3 && ctx.measureText(truncName + '…').width > maxTextWidth) {
-              truncName = truncName.slice(0, -1);
+          if (N <= 35) {
+            var fontTitle = Math.max(9.5, Math.min(14.5, (radius * sliceAngle * 0.44) / dpr)) * dpr;
+            var fontSub = Math.max(7.5, Math.min(10.5, fontTitle * 0.72)) * dpr;
+
+            ctx.font = '800 ' + Math.round(fontTitle) + 'px "Nunito", "DM Sans", sans-serif';
+            ctx.fillText(name, radius - (14 * dpr), -4.5 * dpr);
+
+            if (details) {
+              ctx.font = '700 ' + Math.round(fontSub) + 'px "Nunito", "DM Sans", sans-serif';
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+              ctx.fillText(details, radius - (14 * dpr), 6.5 * dpr);
             }
-            truncName += '…';
+          } else {
+            var fullLabel = name + (details ? ' · ' + details : '');
+            var fontSize = Math.max(7 * dpr, Math.min(12.5 * dpr, (radius * sliceAngle * 0.78)));
+            ctx.font = '800 ' + Math.round(fontSize) + 'px "Nunito", "DM Sans", sans-serif';
+
+            var maxTextWidth = radius * 0.68;
+            var trunc = fullLabel;
+            if (ctx.measureText(trunc).width > maxTextWidth) {
+              while (trunc.length > 3 && ctx.measureText(trunc + '…').width > maxTextWidth) {
+                trunc = trunc.slice(0, -1);
+              }
+              trunc += '…';
+            }
+            ctx.fillText(trunc, radius - (14 * dpr), 0);
           }
-          ctx.fillText(truncName, radius - (14 * dpr), 0);
           ctx.restore();
         }
       }
