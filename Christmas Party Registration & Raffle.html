@@ -1539,6 +1539,9 @@ body.pres nav,body.pres .count>div{display:none}
       this.pool = [];
       this.animId = null;
       this.lastTickIdx = -1;
+      this.cacheCanvas = document.createElement('canvas');
+      this.cacheCtx = this.cacheCanvas.getContext('2d');
+      this.needsRedrawCache = true;
       this.init();
     }
 
@@ -1554,24 +1557,26 @@ body.pres nav,body.pres .count>div{display:none}
       var rect = this.canvas.getBoundingClientRect();
       var size = Math.min(rect.width || 380, 1200);
       if (!size || size < 100) size = 380;
-      var dpr = window.devicePixelRatio || 1;
-      this.canvas.width = size * dpr;
-      this.canvas.height = size * dpr;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      this.canvas.width = Math.round(size * dpr);
+      this.canvas.height = Math.round(size * dpr);
       this.size = size;
       this.dpr = dpr;
+      this.needsRedrawCache = true;
       this.draw();
     };
 
     Wheel.prototype.setPool = function(pool) {
       this.pool = pool || [];
+      this.needsRedrawCache = true;
       this.draw();
     };
 
-    Wheel.prototype.draw = function() {
-      if (!this.canvas || !this.ctx) return;
-      var ctx = this.ctx;
-      var dpr = this.dpr || 1;
-      var size = (this.size || 380) * dpr;
+    Wheel.prototype.renderWheelCache = function(size, dpr) {
+      this.cacheCanvas.width = size;
+      this.cacheCanvas.height = size;
+      var ctx = this.cacheCtx;
+      if (!ctx) return;
       ctx.clearRect(0, 0, size, size);
 
       var cx = size / 2;
@@ -1581,7 +1586,6 @@ body.pres nav,body.pres .count>div{display:none}
       var N = pool.length;
 
       if (N === 0) {
-        // Decorative placeholder wheel when pool empty
         ctx.save();
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -1591,8 +1595,6 @@ body.pres nav,body.pres .count>div{display:none}
         ctx.arc(cx, cy, radius, 0, Math.PI);
         ctx.fillStyle = '#2563eb';
         ctx.fill();
-        this.drawCenterCap(ctx, cx, cy, radius * 0.28, dpr);
-        this.drawOverlayText(ctx, cx, cy, radius, dpr);
         ctx.restore();
         return;
       }
@@ -1601,7 +1603,6 @@ body.pres nav,body.pres .count>div{display:none}
 
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.rotate(this.rotation);
 
       for (var i = 0; i < N; i++) {
         var startAngle = i * sliceAngle;
@@ -1632,14 +1633,14 @@ body.pres nav,body.pres .count>div{display:none}
           ctx.textAlign = 'right';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = 'rgba(0,0,0,0.7)';
-          ctx.shadowBlur = 3 * dpr;
 
           if (N <= 35) {
             var fontTitle = Math.max(9.5, Math.min(22, (radius * sliceAngle * 0.44) / dpr)) * dpr;
             var fontSub = Math.max(7.5, Math.min(14, fontTitle * 0.72)) * dpr;
 
             ctx.font = '800 ' + Math.round(fontTitle) + 'px "Nunito", "DM Sans", sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 3 * dpr;
             ctx.fillText(name, radius - (14 * dpr), -4.5 * dpr);
 
             if (details) {
@@ -1651,6 +1652,8 @@ body.pres nav,body.pres .count>div{display:none}
             var fullLabel = name + (details ? ' · ' + details : '');
             var fontSize = Math.max(7 * dpr, Math.min(16 * dpr, (radius * sliceAngle * 0.78)));
             ctx.font = '800 ' + Math.round(fontSize) + 'px "Nunito", "DM Sans", sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 2.5 * dpr;
 
             var maxTextWidth = radius * 0.68;
             var trunc = fullLabel;
@@ -1678,11 +1681,35 @@ body.pres nav,body.pres .count>div{display:none}
       ctx.shadowBlur = 8 * dpr;
       ctx.stroke();
       ctx.restore();
+    };
 
-      // Center Hub (White circular cap matching user reference image)
+    Wheel.prototype.draw = function() {
+      if (!this.canvas || !this.ctx) return;
+      var ctx = this.ctx;
+      var dpr = this.dpr || 1;
+      var size = Math.round((this.size || 380) * dpr);
+      var cx = size / 2;
+      var cy = size / 2;
+      var radius = (size / 2) - (14 * dpr);
+
+      if (this.needsRedrawCache || !this.cacheCanvas.width || this.cacheCanvas.width !== size) {
+        this.renderWheelCache(size, dpr);
+        this.needsRedrawCache = false;
+      }
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Fast GPU-accelerated blit of cached wheel
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.rotation);
+      ctx.drawImage(this.cacheCanvas, -cx, -cy);
+      ctx.restore();
+
+      // Center Hub Cap
       this.drawCenterCap(ctx, cx, cy, radius * 0.26, dpr);
 
-      // Overlay text: "Click to spin" & "or press ctrl+enter"
+      // Overlay text if idle
       if (!this.isSpinning) {
         this.drawOverlayText(ctx, cx, cy, radius, dpr);
       }
@@ -1768,34 +1795,39 @@ body.pres nav,body.pres .count>div{display:none}
       if (curNorm < 0) curNorm += Math.PI * 2;
 
       var diff = (targetNorm - curNorm + Math.PI * 2) % (Math.PI * 2);
-      var fullSpins = 7 * Math.PI * 2;
+      var fullSpins = 6 * Math.PI * 2;
       var totalRotation = fullSpins + diff;
 
       var startRot = this.rotation;
       var startTime = performance.now();
-      var dur = duration || 5400;
+      var dur = duration || 4000;
       var self = this;
+      var lastTickSound = 0;
 
       function step(now) {
         var elapsed = now - startTime;
         var p = Math.min(elapsed / dur, 1);
-        var ease = 1 - Math.pow(1 - p, 4.6);
+        // Silky smooth ease-out (natural deceleration without dragging)
+        var ease = 1 - Math.pow(1 - p, 3.8);
         self.rotation = startRot + (totalRotation * ease);
 
         var normA = ((Math.PI * 2) - (self.rotation % (Math.PI * 2))) % (Math.PI * 2);
         var curIdx = Math.floor(normA / sliceAngle);
         if (curIdx !== self.lastTickIdx) {
           self.lastTickIdx = curIdx;
-          if (typeof playHit === 'function') {
-            var vol = Math.max(0.12, 0.4 * (1 - p));
-            var pitch = 220 + Math.random() * 35;
-            playHit(vol, pitch);
-          }
-          if (self.pointer) {
-            self.pointer.classList.add('tick');
-            setTimeout(function() {
-              if (self.pointer) self.pointer.classList.remove('tick');
-            }, 45);
+          if (now - lastTickSound > 38) {
+            lastTickSound = now;
+            if (typeof playHit === 'function') {
+              var vol = Math.max(0.1, 0.35 * (1 - p));
+              var pitch = 220 + (1 - p) * 35;
+              playHit(vol, pitch);
+            }
+            if (self.pointer) {
+              self.pointer.style.transform = 'translateY(-50%) rotate(-12deg)';
+              setTimeout(function() {
+                if (self.pointer) self.pointer.style.transform = 'translateY(-50%) rotate(0deg)';
+              }, 25);
+            }
           }
         }
 
@@ -1805,6 +1837,7 @@ body.pres nav,body.pres .count>div{display:none}
           self.animId = requestAnimationFrame(step);
         } else {
           self.isSpinning = false;
+          if (self.pointer) self.pointer.style.transform = 'translateY(-50%) rotate(0deg)';
           self.draw();
           if (onComplete) onComplete();
         }
@@ -1944,7 +1977,7 @@ body.pres nav,body.pres .count>div{display:none}
       if (ww && !ww.isSpinning && !spinning) {
         updateWheelsPool();
         var targetIdx = typeof d.targetIndex === 'number' ? d.targetIndex : 0;
-        ww.spinTo(targetIdx, 5200);
+        ww.spinTo(targetIdx, 3950);
       }
       if ($('wmeta')) $('wmeta').textContent = 'The wheel is spinning for the lucky winner...';
       if ($('pmeta')) $('pmeta').textContent = 'Spinning…';
@@ -2312,26 +2345,16 @@ body.pres nav,body.pres .count>div{display:none}
   function playHit(v, p) {
     if (isSoundMuted) return;
     var ctx = getAudioContext();
-    if (!ctx) return;
-    var now = ctx.currentTime, vol = v || 0.4, pt = p || 180;
+    if (!ctx || ctx.state === 'suspended') return;
+    var now = ctx.currentTime, vol = v || 0.3, pt = p || 220;
     var osc = ctx.createOscillator(), og = ctx.createGain();
-    osc.type = 'triangle';
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(pt, now);
-    osc.frequency.exponentialRampToValueAtTime(60, now + 0.08);
-    og.gain.setValueAtTime(vol * 0.7, now);
-    og.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.04);
+    og.gain.setValueAtTime(vol * 0.5, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
     osc.connect(og); og.connect(ctx.destination);
-    osc.start(now); osc.stop(now + 0.09);
-
-    var n = ctx.createBufferSource();
-    n.buffer = getNoise(ctx);
-    var f = ctx.createBiquadFilter();
-    f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 1.3;
-    var ng = ctx.createGain();
-    ng.gain.setValueAtTime(vol, now);
-    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-    n.connect(f); f.connect(ng); ng.connect(ctx.destination);
-    n.start(now); n.stop(now + 0.08);
+    osc.start(now); osc.stop(now + 0.045);
   }
   var rollTimer = null, rollActive = false;
   function startRoll(dur) {
@@ -2452,7 +2475,7 @@ body.pres nav,body.pres .count>div{display:none}
     updateWheelsPool();
     var pw = getPickWheel();
     var ww = getWallWheel();
-    var spinDur = 5400;
+    var spinDur = 4000;
     if (pw) pw.spinTo(winnerIdx, spinDur);
     if (ww) ww.spinTo(winnerIdx, spinDur);
 
@@ -2467,7 +2490,7 @@ body.pres nav,body.pres .count>div{display:none}
         wstatus.style.background = 'var(--gold)';
       }
 
-      // 2. After suspense breath (450ms), burst-reveal the official winner!
+      // 2. After suspense breath (350ms), burst-reveal the official winner!
       setTimeout(function(){
         spinning=false;
         setStageFade(false);
@@ -2503,7 +2526,7 @@ body.pres nav,body.pres .count>div{display:none}
         playCelebration();
         launchConfetti();
         updateWheelsPool();
-      }, 450);
+      }, 350);
     }, spinDur);
   };
 
